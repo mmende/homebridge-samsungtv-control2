@@ -1,116 +1,378 @@
-import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
+import {
+  API,
+  Logger,
+  PlatformAccessory,
+  PlatformConfig,
+  Service,
+  Characteristic,
+} from 'homebridge';
+import { PLUGIN_NAME, PLATFORM_NAME } from './settings';
+import detectDevices from './utils/detectDevices';
+import * as remote from './remote';
 
-import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { ExamplePlatformAccessory } from './platformAccessory';
+interface SamsungPlatformConfig {
+  platform: typeof PLATFORM_NAME
+  devices: { [usn: string]: DeviceConfig }
+}
 
-/**
- * HomebridgePlatform
- * This class is the main constructor for your plugin, this is where you should
- * parse the user config and discover/register accessories with Homebridge.
- */
-export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
+export class SamsungTVHomebridgePlatform {
   public readonly Service: typeof Service = this.api.hap.Service;
-  public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
+  public readonly Characteristic: typeof Characteristic = this.api.hap
+    .Characteristic;
 
   // this is used to track restored cached accessories
-  public readonly accessories: PlatformAccessory[] = [];
+  // public readonly accessories: PlatformAccessory[] = [];
+  public readonly tvAccessories: Array<PlatformAccessory> = [];
 
   constructor(
     public readonly log: Logger,
     public readonly config: PlatformConfig,
     public readonly api: API,
   ) {
-    this.log.debug('Finished initializing platform:', this.config.name);
+    this.log = log;
+    this.config = config;
+    this.api = api;
 
-    // When this event is fired it means Homebridge has restored all cached accessories from disk.
-    // Dynamic Platform plugins should only register new accessories after this event was fired,
-    // in order to ensure they weren't added to homebridge already. This event can also be used
-    // to start discovery of new accessories.
-    this.api.on('didFinishLaunching', () => {
-      log.debug('Executed didFinishLaunching callback');
-      // run the method to discover / register your devices as accessories
-      this.discoverDevices();
+    this.Service = api.hap.Service;
+    this.Characteristic = api.hap.Characteristic;
+
+    // Add devices
+    api.on('didFinishLaunching', async () => {
+      // const { devices = {} }: { devices: { [usn: string]: DeviceConfig } } = (config || {});
+      const devices: { [usn: string]: DeviceConfig } = {};
+      const samsungTVs = await detectDevices();
+      for (const tv of samsungTVs) {
+        const { usn, friendlyName: name, modelName, location: lastKnownLocation, address: lastKnownIp, mac } = tv;
+        const deviceConfig = {
+          name,
+          modelName,
+          lastKnownLocation,
+          lastKnownIp,
+          mac,
+          usn,
+          delay: 500,
+        };
+        devices[tv.usn] = deviceConfig;
+        this.initTV(deviceConfig);
+
+        // @TODO: Check if the device existed in config
+        // true => update lastKnownIp, lastKnownLocation and use the rest from config
+        // false => add it to the config with the default values
+        /*
+        if (devices[tv.usn]) {
+          // Update lastKnownLocation and lastKnownIp
+          devices[tv.usn].lastKnownIp = tv.address;
+          devices[tv.usn].lastKnownLocation = tv.location;
+        } else {
+          const { friendlyName: name, modelName, location: lastKnownLocation, address: lastKnownIp } = tv;
+          console.log(`Found new SamsungTV "${name}"`, tv.model); // eslint-disable-line
+          this.config.devices[tv.usn] = {
+            name,
+            modelName,
+            lastKnownLocation,
+            lastKnownIp,
+          };
+          this.initTV(this.config.devices[tv.usn]);
+        }
+        */
+      }
+      this.config.devices = devices;
+      console.log(devices); // eslint-disable-line
     });
   }
 
-  /**
-   * This function is invoked when homebridge restores cached accessories from disk at startup.
-   * It should be used to setup event handlers for characteristics and update respective values.
-   */
-  configureAccessory(accessory: PlatformAccessory) {
-    this.log.info('Loading accessory from cache:', accessory.displayName);
+  initTV(device: DeviceConfig) {
+    // generate a UUID
+    const uuid = this.api.hap.uuid.generate(device.usn);
 
-    // add the restored accessory to the accessories cache so we can track if it has already been registered
-    this.accessories.push(accessory);
-  }
+    // create the accessory
+    const tvAccessory = new this.api.platformAccessory(device.name, uuid);
+    tvAccessory.context = device;
 
-  /**
-   * This is an example method showing how to register discovered accessories.
-   * Accessories must only be registered once, previously created accessories
-   * must not be registered again to prevent "duplicate UUID" errors.
-   */
-  discoverDevices() {
+    this.tvAccessories.push(tvAccessory);
 
-    // EXAMPLE ONLY
-    // A real plugin you would discover accessories from the local network, cloud services
-    // or a user-defined array in the platform config.
-    const exampleDevices = [
+    // get the name
+    const tvName = device.name;
+
+    // set the accessory category
+    tvAccessory.category = this.api.hap.Categories.TELEVISION;
+
+    // add the tv service
+    const tvService = tvAccessory.addService(this.Service.Television);
+    // set the tv name, manufacturer etc.
+    tvService.setCharacteristic(this.Characteristic.ConfiguredName, tvName);
+
+    // const accessoryService = tvAccessory.addService(this.Service.AccessoryInformation);
+    // accessoryService.getCharacteristic(this.Characteristic.Manufacturer)
+    //   .on('get', (callback) => {
+    //     callback(null, 'Samsung Electronics');
+    //   });
+    // accessoryService.getCharacteristic(this.Characteristic.Model)
+    //   .on('get', (callback) => {
+    //     callback(null, device.modelName);
+    //   });
+    // accessoryService.getCharacteristic(this.Characteristic.SerialNumber)
+    //   .on('get', (callback) => {
+    //     callback(null, device.modelName);
+    //   });
+
+    // set sleep discovery characteristic
+    tvService.setCharacteristic(
+      this.Characteristic.SleepDiscoveryMode,
+      this.Characteristic.SleepDiscoveryMode.NOT_DISCOVERABLE,
+    );
+
+    // handle on / off events using the Active characteristic
+    tvService
+      .getCharacteristic(this.Characteristic.Active)
+      .on('get', async (callback) => {
+        this.log.debug(`${tvName} - GET Active`);
+        try {
+          const isActive = await remote.getActive(device);
+          callback(null, isActive);
+        } catch (err) {
+          callback(err);
+        }
+      })
+      .on('set', async (newValue, callback) => {
+        this.log.debug(`${tvName} - SET Active => setNewValue: ${newValue}`);
+        try {
+          await remote.setActive(device, newValue);
+          tvService.updateCharacteristic(
+            this.Characteristic.Active,
+            newValue ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE,
+          );
+          callback(null);
+        } catch (err) {
+          callback(err);
+        }
+      });
+
+    tvService
+      .getCharacteristic(this.Characteristic.Brightness)
+      .on('get', async (callback) => {
+        this.log.debug(`${tvName} - GET Brightness`);
+        try {
+          const brightness = await remote.getBrightness(device);
+          callback(null, brightness);
+        } catch (err) {
+          callback(err);
+        }
+      })
+      .on('set', async (newValue, callback) => {
+        this.log.debug(`${tvName} - SET Brightness => setNewValue: ${newValue}`);
+        try {
+          await remote.setBrightness(device, newValue);
+          tvService.updateCharacteristic(this.Characteristic.Brightness, newValue);
+          callback(null);
+        } catch (err) {
+          callback(err);
+        }
+      });
+
+    // handle remote control input
+    tvService
+      .getCharacteristic(this.Characteristic.RemoteKey)
+      .on('set', async (newValue, callback) => {
+        try {
+          switch (newValue) {
+            case this.Characteristic.RemoteKey.REWIND: {
+              this.log.debug(`${tvName} - SET Remote Key Pressed: REWIND`);
+              await remote.rewind(device);
+              break;
+            }
+            case this.Characteristic.RemoteKey.FAST_FORWARD: {
+              this.log.debug(`${tvName} - SET Remote Key Pressed: FAST_FORWARD`);
+              await remote.fastForward(device);
+              break;
+            }
+            case this.Characteristic.RemoteKey.NEXT_TRACK: {
+              this.log.debug(`${tvName} - SET Remote Key Pressed: NEXT_TRACK`);
+              break;
+            }
+            case this.Characteristic.RemoteKey.PREVIOUS_TRACK: {
+              this.log.debug(`${tvName} - SET Remote Key Pressed: PREVIOUS_TRACK`);
+              break;
+            }
+            case this.Characteristic.RemoteKey.ARROW_UP: {
+              this.log.debug(`${tvName} - SET Remote Key Pressed: ARROW_UP`);
+              await remote.arrowUp(device);
+              break;
+            }
+            case this.Characteristic.RemoteKey.ARROW_DOWN: {
+              this.log.debug(`${tvName} - SET Remote Key Pressed: ARROW_DOWN`);
+              await remote.arrowDown(device);
+              break;
+            }
+            case this.Characteristic.RemoteKey.ARROW_LEFT: {
+              this.log.debug(`${tvName} - SET Remote Key Pressed: ARROW_LEFT`);
+              await remote.arrowLeft(device);
+              break;
+            }
+            case this.Characteristic.RemoteKey.ARROW_RIGHT: {
+              this.log.debug(`${tvName} - SET Remote Key Pressed: ARROW_RIGHT`);
+              await remote.arrowRight(device);
+              break;
+            }
+            case this.Characteristic.RemoteKey.SELECT: {
+              this.log.debug(`${tvName} - SET Remote Key Pressed: SELECT`);
+              await remote.select(device);
+              break;
+            }
+            case this.Characteristic.RemoteKey.BACK: {
+              this.log.debug(`${tvName} - SET Remote Key Pressed: BACK`);
+              await remote.back(device);
+              break;
+            }
+            case this.Characteristic.RemoteKey.EXIT: {
+              this.log.debug(`${tvName} - SET Remote Key Pressed: EXIT`);
+              await remote.exit(device);
+              break;
+            }
+            case this.Characteristic.RemoteKey.PLAY_PAUSE: {
+              this.log.debug(`${tvName} - SET Remote Key Pressed: PLAY_PAUSE`);
+              break;
+            }
+            case this.Characteristic.RemoteKey.INFORMATION: {
+              this.log.debug(`${tvName} - SET Remote Key Pressed: INFORMATION`);
+              await remote.info(device);
+              break;
+            }
+          }
+        } catch (err) {
+          callback(err);
+          return;
+        }
+        callback(null);
+      });
+
+    /**
+     * Create a speaker service to allow volume control
+     */
+    const speakerService = tvAccessory.addService(
+      this.Service.TelevisionSpeaker,
+    );
+
+    speakerService
+      .setCharacteristic(
+        this.Characteristic.Active,
+        this.Characteristic.Active.ACTIVE,
+      )
+      .setCharacteristic(
+        this.Characteristic.VolumeControlType,
+        this.Characteristic.VolumeControlType.ABSOLUTE,
+      );
+
+    // handle volume control
+    speakerService
+      .getCharacteristic(this.Characteristic.Volume)
+      .on('get', async callback => {
+        this.log.debug(`${tvName} - GET Volume`);
+        try {
+          const volume = await remote.getVolume(device);
+          callback(null, volume);
+        } catch (err) {
+          callback(err);
+        }
+      })
+      .on('set', async (newValue, callback) => {
+        this.log.debug(`${tvName} - SET Volume => setNewValue: ${newValue}`);
+        try {
+          await remote.setVolume(device, newValue);
+          callback(null);
+        } catch (err) {
+          callback(err);
+        }
+      });
+
+    // speakerService
+    //   .getCharacteristic(this.Characteristic.VolumeSelector)
+    //   .on('set', async (newValue, callback) => {
+    //     this.log.info(`${tvName} - SET VolumeSelector => setNewValue: ${newValue}`);
+    //     if (newValue === this.Characteristic.VolumeSelector.INCREMENT) {
+    //       await remote.volumeUp(device);
+    //     } else {
+    //       await remote.volumeDown(device);
+    //     }
+    //     // await remote.setVolume(device, newValue);
+    //     callback(null);
+    //   });
+
+    speakerService
+      .getCharacteristic(this.Characteristic.Mute)
+      .on('get', async callback => {
+        this.log.debug(`${tvName} - GET Mute`);
+        try {
+          const volume = await remote.getMute(device);
+          callback(null, volume);
+        } catch (err) {
+          callback(err);
+        }
+      })
+      .on('set', async (value, callback) => {
+        this.log.debug(`${tvName} - SET Mute: ${value}`);
+        try {
+          await remote.setMute(device, value);
+          callback(null);
+        } catch (err) {
+          callback(err);
+        }
+      });
+
+    const inputSources = [
+      { id: 'tv', label: 'TV', type: this.Characteristic.InputSourceType.TUNER, fn: remote.openTV },
+      { id: 'hdmi', label: 'HDMI', type: this.Characteristic.InputSourceType.HDMI, fn: remote.openHDMI },
+      { id: 'hdmi1', label: 'HDMI1', type: this.Characteristic.InputSourceType.HDMI, fn: remote.openHDMI1, disabled: true },
+      { id: 'hdmi2', label: 'HDMI2', type: this.Characteristic.InputSourceType.HDMI, fn: remote.openHDMI2, disabled: true },
+      { id: 'hdmi3', label: 'HDMI3', type: this.Characteristic.InputSourceType.HDMI, fn: remote.openHDMI3, disabled: true },
+      { id: 'hdmi4', label: 'HDMI4', type: this.Characteristic.InputSourceType.HDMI, fn: remote.openHDMI4, disabled: true },
+      { id: 'appleTv', label: 'AppleTV', type: this.Characteristic.InputSourceType.APPLICATION, fn: remote.openAppleTV, disabled: true },
+      { id: 'netflix', label: 'Netflix', type: this.Characteristic.InputSourceType.APPLICATION, fn: remote.openNetflix, disabled: true },
       {
-        exampleUniqueId: 'ABCD',
-        exampleDisplayName: 'Bedroom',
+        id: 'primeVideo', label: 'Prime Video', type: this.Characteristic.InputSourceType.APPLICATION, fn: remote.openPrimeVideo,
+        disabled: true,
       },
-      {
-        exampleUniqueId: 'EFGH',
-        exampleDisplayName: 'Kitchen',
-      },
+      { id: 'spotify', label: 'Spotify', type: this.Characteristic.InputSourceType.APPLICATION, fn: remote.openSpotify, disabled: true },
+      { id: 'youTube', label: 'YoutTube', type: this.Characteristic.InputSourceType.APPLICATION, fn: remote.openYouTube },
     ];
 
-    // loop over the discovered devices and register each one if it has not already been registered
-    for (const device of exampleDevices) {
+    tvService.setCharacteristic(this.Characteristic.ActiveIdentifier, 0);
+    // handle input source changes
+    tvService
+      .getCharacteristic(this.Characteristic.ActiveIdentifier)
+      .on('set', async (newValue, callback) => {
+        // the value will be the value you set for the Identifier Characteristic
+        // on the Input Source service that was selected - see input sources below.
+        const inputSource = inputSources[newValue];
+        this.log.debug(`${tvName} - SET Active Identifier => setNewValue: ${newValue} (${inputSource.label})`);
+        try {
+          await inputSource.fn(device);
+          tvService.updateCharacteristic(this.Characteristic.ActiveIdentifier, newValue);
+        } catch (err) {
+          callback(err);
+          return;
+        }
+        callback(null);
+      });
 
-      // generate a unique id for the accessory this should be generated from
-      // something globally unique, but constant, for example, the device serial
-      // number or MAC address
-      const uuid = this.api.hap.uuid.generate(device.exampleUniqueId);
-
-      // see if an accessory with the same uuid has already been registered and restored from
-      // the cached devices we stored in the `configureAccessory` method above
-      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
-
-      if (existingAccessory) {
-        // the accessory already exists
-        this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
-
-        // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
-        // existingAccessory.context.device = device;
-        // this.api.updatePlatformAccessories([existingAccessory]);
-
-        // create the accessory handler for the restored accessory
-        // this is imported from `platformAccessory.ts`
-        new ExamplePlatformAccessory(this, existingAccessory);
-
-      } else {
-        // the accessory does not yet exist, so we need to create it
-        this.log.info('Adding new accessory:', device.exampleDisplayName);
-
-        // create a new accessory
-        const accessory = new this.api.platformAccessory(device.exampleDisplayName, uuid);
-
-        // store a copy of the device object in the `accessory.context`
-        // the `context` property can be used to store any data about the accessory you may need
-        accessory.context.device = device;
-
-        // create the accessory handler for the newly create accessory
-        // this is imported from `platformAccessory.ts`
-        new ExamplePlatformAccessory(this, accessory);
-
-        // link the accessory to your platform
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+    for (let i = 0; i < inputSources.length; ++i) {
+      const { id, label, type, disabled } = inputSources[i];
+      if (!disabled) {
+        const inputService = tvAccessory.addService(this.Service.InputSource, id, label);
+        inputService
+          .setCharacteristic(this.Characteristic.Identifier, i)
+          .setCharacteristic(this.Characteristic.ConfiguredName, label)
+          .setCharacteristic(this.Characteristic.IsConfigured, this.Characteristic.IsConfigured.CONFIGURED)
+          .setCharacteristic(this.Characteristic.InputSourceType, type);
+        tvService.addLinkedService(inputService);
       }
-
-      // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
-      // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     }
 
+    /**
+     * Publish as external accessory
+     * Only one TV can exist per bridge, to bypass this limitation, you should
+     * publish your TV as an external accessory.
+     */
+    this.api.publishExternalAccessories(PLUGIN_NAME, [tvAccessory]);
   }
 }

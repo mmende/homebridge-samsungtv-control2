@@ -1,15 +1,53 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "SamsungTV",
   "pluginType": "platform",
   "singular": true,
   "schema": {
     "type": "object",
     "properties": {
-      "name": {
-        "title": "Name",
-        "type": "string",
-        "required": true,
-        "default": "Example Dynamic Platform"
+      "devices": {
+        "title": "Samsung TV's",
+        "description": "The TV's will be identified via UPNP and will be added automatically at the start.\nTherefore before starting homebridge the first time be sure your Samsung TV's are running and are connected to the local network.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "TV name",
+            "placeholder": "TV Livingroom",
+            "type": "string",
+            "required": true
+          },
+          "modelName": {
+            "title": "Model name",
+            "description": "This value will automatically be set by the plugin.",
+            "type": "string",
+            "required": true
+          },
+          "lastKnownLocation": {
+            "title": "Last known upnp location",
+            "description": "This value will automatically be updated by the plugin.",
+            "type": "string",
+            "required": true
+          },
+          "lastKnownIp": {
+            "title": "Last known ip address",
+            "description": "This value will automatically be updated by the plugin.",
+            "type": "string",
+            "required": true,
+            "format": "hostname"
+          },
+          "delay": {
+            "title": "Delay between send keys",
+            "type": "number",
+            "required": true,
+            "minimum": 100,
+            "maximum": 3000,
+            "default": 500
+          },
+          "ignore": {
+            "title": "Ignore this TV",
+            "type": "boolean"
+          }
+        }
       }
     }
   }
