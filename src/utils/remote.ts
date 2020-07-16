@@ -56,7 +56,7 @@ const sendKey = async (config: DeviceConfig, key: KEYS) => {
   control.closeConnection();
 };
 
-const sendKeys = async (config: DeviceConfig, keys: Array<KEYS>) => {
+export const sendKeys = async (config: DeviceConfig, keys: Array<KEYS>) => {
   const cfg = getRemoteConfig(config);
   const control = new Samsung(cfg);
   for (let i = 0; i < keys.length; ++i) {
@@ -84,20 +84,6 @@ const turnOn = async (config: DeviceConfig) => {
   await control.turnOn();
   control.closeConnection();
 };
-
-export interface Config {
-  // Used to check the volume, mute state etc.
-  upnpURL: string;
-  // Whether upnp setters should be used to set things like volume, or mute.
-  // Unfortunatelly not all Samsung TV's react to the setters.
-  // If set to false single keys will be send to the TV via samsung-tv-control to accomplish the task
-  controlWithUpnp: boolean;
-  // Used to send keys via samsung-tv-control
-  ip: string;
-  // An artificial delay that is placed in between sended
-  // keys to increase reliability
-  delay: number;
-}
 
 export const getDeviceInfo = async (config: DeviceConfig) => {
   const { lastKnownLocation: url } = config;
@@ -130,9 +116,8 @@ export const getVolume = async (config: DeviceConfig) => {
 };
 
 export const setVolume = async (config: DeviceConfig, volume: number) => {
-  const { lastKnownLocation: url /* controlWithUpnp,  */ } = config;
-  const controlWithUpnp = true;
-  if (controlWithUpnp) {
+  const { lastKnownLocation: url, disableUpnpSetters } = config;
+  if (!disableUpnpSetters) {
     const remote = new Remote({ url });
     await remote.setVolume(volume);
     return;
@@ -168,9 +153,8 @@ export const getMute = async (config: DeviceConfig) => {
 };
 
 export const setMute = async (config: DeviceConfig, mute: boolean) => {
-  const { lastKnownLocation: url /* controlWithUpnp, */ } = config;
-  const controlWithUpnp = true;
-  if (controlWithUpnp) {
+  const { lastKnownLocation: url, disableUpnpSetters } = config;
+  if (!disableUpnpSetters) {
     const remote = new Remote({ url });
     await remote.setMute(mute);
     return;
@@ -192,9 +176,12 @@ export const getBrightness = async (config: DeviceConfig) => {
 };
 
 export const setBrightness = async (config: DeviceConfig, brightness: number) => {
-  const { lastKnownLocation: url } = config;
-  const upnp = new UPNP({ url });
-  await upnp.call('urn:upnp-org:serviceId:RenderingControl', 'SetBrightness', { InstanceID: 0, DesiredBrightness: brightness });
+  const { lastKnownLocation: url, disableUpnpSetters } = config;
+  if (!disableUpnpSetters) {
+    const upnp = new UPNP({ url });
+    await upnp.call('urn:upnp-org:serviceId:RenderingControl', 'SetBrightness', { InstanceID: 0, DesiredBrightness: brightness });
+  }
+  // Brightness cannot be set otherwise...
 };
 
 export const rewind = async (config: DeviceConfig) => {

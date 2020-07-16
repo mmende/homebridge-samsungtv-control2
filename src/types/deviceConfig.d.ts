@@ -11,6 +11,10 @@ export interface DeviceConfig {
   ignore?: boolean
   remoteControlPort?: number
   token?: string
+  customInputs?: {
+    [label: string]: string
+  }
+  disableUpnpSetters?: boolean
 }
 
 export interface SamsungPlatformConfig {

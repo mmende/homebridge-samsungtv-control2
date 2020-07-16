@@ -69,6 +69,15 @@
             "title": "Pairing token",
             "description": "When not already paired and the TV was build after 2013 this value will be set at startup after you allowed pairing on your TV.",
             "type": "number"
+          },
+          "customInputs": {
+            "title": "Custom inputs",
+            "description": "Key = Input name, value = comma seperated list of keys to send e.g. KEY_4,KEY_2 to go to channel 42",
+            "type": "object"
+          },
+          "disableUpnpSetters": {
+            "title": "If true, volume for example will be set by sending multiple volume up / down keys",
+            "type": "boolean"
           }
         }
       }
