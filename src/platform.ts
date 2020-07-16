@@ -52,7 +52,7 @@ export class SamsungTVHomebridgePlatform {
       // Regularly discover upnp devices and update ip's, locations for registered devices
       setInterval(async () => {
         const devices = await this.discoverDevices();
-        this.log.debug(`Updating ${PLATFORM_NAME} configuration`);
+        this.log.info(`Updating ${PLATFORM_NAME} configuration`);
         // Update this.config
         this.config.devices = devices;
         // Update the actual config file without creating a backup
@@ -91,24 +91,9 @@ export class SamsungTVHomebridgePlatform {
           lastKnownIp: device.lastKnownIp,
           token: device.token,
         };
+      } else {
+        this.log.info(`Added new TV "${device.name}" to config`);
       }
-      /*
-      // Try pairing if not done already
-      try {
-        if (!device.ignore) {
-          const token = await remote.pair(device, this.log);
-          if (token) {
-            device.token = token;
-          }
-        }
-      } catch (err) {
-        this.log.warn(
-          'Did not receive pairing token. Either you did not click "Allow" in time or your TV might not be supported.' +
-          'You might just want to restart homebridge and retry.',
-        );
-      }
-      */
-
       devices[usn] = device;
     }
     return devices;

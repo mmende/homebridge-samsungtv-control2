@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "SamsungTV",
+  "pluginAlias": "SamsungTVControl",
   "pluginType": "platform",
   "singular": true,
   "schema": {

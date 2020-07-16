@@ -1,5 +1,4 @@
 {
-  "private": true,
   "displayName": "SamsungTV Control",
   "name": "homebridge-samsungtv-control",
   "version": "2.0.0-alpha.1",
