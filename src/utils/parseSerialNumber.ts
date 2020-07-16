@@ -45,6 +45,7 @@ export interface SamsungTVModel {
   year: typeof years[keyof typeof years];
   yearKey: keyof typeof years;
   size: number
+  rest: string
 }
 
 /**
@@ -56,7 +57,7 @@ export default (sn: string): SamsungTVModel | null => {
   const techKeys = Object.keys(techs);
   const marketKeys = Object.keys(markets);
   const yearKeys = Object.keys(years);
-  const pattern = `^(${techKeys.join('|')})(${marketKeys.join('|')})([0-9]+)(${yearKeys.join('|')})`;
+  const pattern = `^(${techKeys.join('|')})(${marketKeys.join('|')})([0-9]+)(${yearKeys.join('|')})(.*)`;
   const re = new RegExp(pattern, 'gi');
 
   const matches = re.exec(sn);
@@ -67,6 +68,7 @@ export default (sn: string): SamsungTVModel | null => {
   const market = matches[2];
   const size = matches[3];
   const year = matches[4];
+  const rest = matches[5];
   return {
     technology: techs[tech],
     technologyKey: tech as keyof typeof techs,
@@ -75,6 +77,7 @@ export default (sn: string): SamsungTVModel | null => {
     size: parseInt(size, 10),
     year: years[year],
     yearKey: year as keyof typeof years,
+    rest,
   };
 };
 
