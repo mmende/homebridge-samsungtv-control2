@@ -5,6 +5,7 @@
   "version": "2.0.0-alpha.1",
   "description": "Homebridge Samsung TV plugin to control Samsung TV's",
   "license": "MIT",
+  "author": "mmende",
   "repository": {
     "type": "git",
     "url": "https://github.com/mmende/homebridge-samsungtv-control2.git"
@@ -22,26 +23,26 @@
     "watch": "npm run build && npm link && nodemon",
     "build": "rimraf ./dist && tsc",
     "prepublishOnly": "npm run lint && npm run build",
-    "scan": "ts-node ./src/manualScan.ts"
+    "scan": "ts-node ./src/manualScan.ts",
+    "cli": "ts-node ./src/cli.ts"
   },
   "keywords": [
     "homebridge-plugin",
     "samsung",
-    "tv"
+    "tv",
+    "upnp"
   ],
   "dependencies": {
-    "dlnacasts2": "^0.2.0",
     "macfromip": "^1.1.1",
     "node-upnp": "^1.2.0",
     "node-upnp-remote": "^1.2.0",
-    "samsung-remote": "^1.5.2",
     "samsung-tv-control": "^1.10.0",
     "ssdp-ts": "^3.2.6"
   },
   "devDependencies": {
-    "@types/node": "^14.0.20",
-    "@typescript-eslint/eslint-plugin": "^3.6.0",
-    "@typescript-eslint/parser": "^3.6.0",
+    "@types/node": "^14.0.23",
+    "@typescript-eslint/eslint-plugin": "^3.6.1",
+    "@typescript-eslint/parser": "^3.6.1",
     "eslint": "^7.4.0",
     "homebridge": "^1.1.1",
     "nodemon": "^2.0.4",
