@@ -21,18 +21,18 @@ Some Samsung TV's (actually all I was able to test) turn off their network card 
 After you started homebridge and see your devices being addes successfully to your config (might need to refresh the UI) you can add a `customInputs` property to e.g. be able to switch channels by selecting this input as input source in the home app. The value represents the key sequence that needs to be pressed to open that channel. An example device config would look like this:
 
 ```json
-"uuid:a7001fbe-c776-11ea-87d0-0242ac130003": {
-    "name": "Bedroom TV",
-    "modelName": "UE40D6100",
-    "lastKnownLocation": "http://192.168.0.42:52235/dmr/SamsungMRDesc.xml",
-    "lastKnownIp": "192.168.0.42",
-    "mac": "00:4f:16:e2:1a:c8",
-    "usn": "a7001fbe-c776-11ea-87d0-0242ac130003",
-    "delay": 500,
-    "customInputs": {
-        "ZDF HD": "KEY_2,KEY_ENTER",
-        "ProSieben": "KEY_3,KEY_0,KEY_4,KEY_ENTER"
-    }
+{
+  "name": "Bedroom TV",
+  "modelName": "UE40D6100",
+  "lastKnownLocation": "http://192.168.0.42:52235/dmr/SamsungMRDesc.xml",
+  "lastKnownIp": "192.168.0.42",
+  "mac": "00:4f:16:e2:1a:c8",
+  "usn": "a7001fbe-c776-11ea-87d0-0242ac130003",
+  "delay": 500,
+  "customInputs": {
+    "ZDF HD": "KEY_2,KEY_ENTER",
+    "ProSieben": "KEY_3,KEY_0,KEY_4,KEY_ENTER"
+  }
 }
 ```
 
