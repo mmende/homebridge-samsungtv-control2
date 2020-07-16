@@ -39,8 +39,11 @@ const years = {
 
 export interface SamsungTVModel {
   technology: typeof techs[keyof typeof techs];
+  technologyKey: keyof typeof techs;
   market: typeof markets[keyof typeof markets];
+  marketKey: keyof typeof markets;
   year: typeof years[keyof typeof years];
+  yearKey: keyof typeof years;
   size: number
 }
 
@@ -66,9 +69,12 @@ export default (sn: string): SamsungTVModel | null => {
   const year = matches[4];
   return {
     technology: techs[tech],
+    technologyKey: tech as keyof typeof techs,
     market: markets[market],
+    marketKey: market as keyof typeof markets,
     size: parseInt(size, 10),
     year: years[year],
+    yearKey: year as keyof typeof years,
   };
 };
 

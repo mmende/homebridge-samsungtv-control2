@@ -6,14 +6,11 @@ import {
   Service,
   Characteristic,
 } from 'homebridge';
-import { PLUGIN_NAME, PLATFORM_NAME } from './settings';
+import { PLUGIN_NAME } from './settings';
 import detectDevices from './utils/detectDevices';
-import * as remote from './remote';
-
-interface SamsungPlatformConfig {
-  platform: typeof PLATFORM_NAME
-  devices: { [usn: string]: DeviceConfig }
-}
+import * as remote from './utils/remote';
+import { DeviceConfig, SamsungPlatformConfig } from './types/deviceConfig';
+import updateDeviceConfig from './utils/updateDeviceConfig';
 
 export class SamsungTVHomebridgePlatform {
   public readonly Service: typeof Service = this.api.hap.Service;
@@ -36,14 +33,16 @@ export class SamsungTVHomebridgePlatform {
     this.Service = api.hap.Service;
     this.Characteristic = api.hap.Characteristic;
 
+    console.log('Devices in config', (this.config as SamsungPlatformConfig).devices); // eslint-disable-line
+
     // Add devices
     api.on('didFinishLaunching', async () => {
-      // const { devices = {} }: { devices: { [usn: string]: DeviceConfig } } = (config || {});
-      const devices: { [usn: string]: DeviceConfig } = {};
+      const { devices = {} }: { devices: { [usn: string]: DeviceConfig } } = (config as SamsungPlatformConfig || {});
+      // const devices: { [usn: string]: DeviceConfig } = {};
       const samsungTVs = await detectDevices();
       for (const tv of samsungTVs) {
         const { usn, friendlyName: name, modelName, location: lastKnownLocation, address: lastKnownIp, mac } = tv;
-        const deviceConfig = {
+        let device: DeviceConfig = {
           name,
           modelName,
           lastKnownLocation,
@@ -52,32 +51,39 @@ export class SamsungTVHomebridgePlatform {
           usn,
           delay: 500,
         };
-        devices[tv.usn] = deviceConfig;
-        this.initTV(deviceConfig);
-
-        // @TODO: Check if the device existed in config
-        // true => update lastKnownIp, lastKnownLocation and use the rest from config
-        // false => add it to the config with the default values
-        /*
-        if (devices[tv.usn]) {
-          // Update lastKnownLocation and lastKnownIp
-          devices[tv.usn].lastKnownIp = tv.address;
-          devices[tv.usn].lastKnownLocation = tv.location;
-        } else {
-          const { friendlyName: name, modelName, location: lastKnownLocation, address: lastKnownIp } = tv;
-          console.log(`Found new SamsungTV "${name}"`, tv.model); // eslint-disable-line
-          this.config.devices[tv.usn] = {
-            name,
-            modelName,
-            lastKnownLocation,
-            lastKnownIp,
+        // Check if the tv was in the devices list before
+        // if so, only replace the relevant parts
+        const existingDevice = devices[tv.usn];
+        if (existingDevice) {
+          this.log.debug(`${existingDevice.name} - Updating configuration`);
+          device = {
+            ...existingDevice,
+            modelName: device.modelName,
+            lastKnownLocation: device.lastKnownLocation,
+            lastKnownIp: device.lastKnownIp,
+            token: device.token,
           };
-          this.initTV(this.config.devices[tv.usn]);
         }
-        */
+        // Try pairing if not done already
+        try {
+          if (!device.ignore) {
+            const token = await remote.pair(device, this.log);
+            if (token) {
+              device.token = token;
+            }
+          }
+        } catch (err) {
+          this.log.warn(`Did not receive pairing token. Either you did not click "Allow" in time or your TV might not be supported.
+          You might just want to restart homebridge and retry.`);
+        }
+
+        devices[tv.usn] = device;
+        if (!device.ignore) {
+          this.initTV(device);
+        }
       }
       this.config.devices = devices;
-      console.log(devices); // eslint-disable-line
+      await updateDeviceConfig(this.api.user.configPath(), devices);
     });
   }
 

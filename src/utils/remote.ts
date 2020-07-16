@@ -2,7 +2,9 @@ import Remote from 'node-upnp-remote';
 import UPNP from 'node-upnp';
 import { Samsung, KEYS, APPS } from 'samsung-tv-control';
 import { PLATFORM_NAME } from '../settings';
-import parseSerialNumber from '../utils/parseSerialNumber';
+import parseSerialNumber from './parseSerialNumber';
+import { Logger } from 'homebridge';
+import { DeviceConfig } from '../types/deviceConfig';
 
 const getRemoteConfig = (config: DeviceConfig) => {
   const model = parseSerialNumber(config.modelName);
@@ -15,6 +17,28 @@ const getRemoteConfig = (config: DeviceConfig) => {
     name: PLATFORM_NAME,
     port,
   };
+};
+
+export const pair = async (config: DeviceConfig, log: Logger) => {
+  const { token, modelName } = config;
+  const model = parseSerialNumber(modelName);
+  const { year = 2013 } = model || {};
+  const supportsLegacy = typeof year === 'number' && year < 2014;
+  if (supportsLegacy) {
+    log.debug(`${config.name} - Skipping pairing since this TV is from ${year} and should support the legacy protocol without pairing.`);
+    return null;
+  }
+  const { yearKey } = model || {};
+  if (yearKey === 'J' || yearKey === 'H') {
+    log.debug(`${config.name} - This TV seems to be a ${yearKey}-Series which probably won't work with this plugin.`);
+  }
+  if (token) {
+    return token;
+  }
+  const cfg = getRemoteConfig(config);
+  const control = new Samsung(cfg);
+  await control.getTokenPromise();
+  return token;
 };
 
 const isAvailable = async (config: DeviceConfig) => {
@@ -217,9 +241,7 @@ export const info = async (config: DeviceConfig) => {
   await sendKey(config, KEYS.KEY_INFO);
 };
 
-// export const html1 = async (config: Config) => {
-//
-// }
+
 export const openTV = async (config: DeviceConfig) => {
   await sendKey(config, KEYS.KEY_TV);
 };
