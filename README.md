@@ -12,6 +12,6 @@ There is a homekit limitation that allows only one TV per bridge. Therefore each
 4. The found TV should appear under **Nearby Accessories** ... click on it
 5. Use the pin that you configured under `config > bridge > pin`
 
-# Turning a TV on
+# Turning on a TV
 
-Some Samsung TV's (actually all I was able to test) turn off their network card when being turned off completely. Therefore these models cannot be turned on again by this plugin since they are just not reachable over the network. However some newer models might support Wake-on-LAN or Wake-on-WIFI which this plugin tries to use to turn your TV back on.
+Some Samsung TV's (actually all I was able to test) turn off their network card when being turned off completely. Therefore these models cannot be turned on again by this plugin since they are just not reachable over the network. However some newer models might support Wake-on-LAN or WoWLAN which this plugin tries to use to turn your TV back on.

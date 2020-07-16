@@ -90,9 +90,9 @@ export interface Config {
   upnpURL: string;
   // Whether upnp setters should be used to set things like volume, or mute.
   // Unfortunatelly not all Samsung TV's react to the setters.
-  // If set to false single keys will be send to the TV via samsung-remote to accomplish the task
+  // If set to false single keys will be send to the TV via samsung-tv-control to accomplish the task
   controlWithUpnp: boolean;
-  // Used to send keys via samsung-remote
+  // Used to send keys via samsung-tv-control
   ip: string;
   // An artificial delay that is placed in between sended
   // keys to increase reliability
