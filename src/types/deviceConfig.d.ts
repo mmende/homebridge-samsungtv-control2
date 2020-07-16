@@ -19,5 +19,5 @@ export interface DeviceConfig {
 
 export interface SamsungPlatformConfig {
   platform: typeof PLATFORM_NAME
-  devices: { [usn: string]: DeviceConfig }
+  devices: Array<DeviceConfig>
 }

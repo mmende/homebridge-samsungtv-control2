@@ -45,8 +45,8 @@ export class SamsungTVHomebridgePlatform {
       await updateDeviceConfig(this.api.user.configPath(), devices, true);
 
       // Register all TV's
-      for (const usn in devices) {
-        this.registerTV(usn);
+      for (const device of devices) {
+        this.registerTV(device.usn);
       }
 
       // Regularly discover upnp devices and update ip's, locations for registered devices
@@ -67,7 +67,7 @@ export class SamsungTVHomebridgePlatform {
   }
 
   private async discoverDevices() {
-    const { devices = {} }: { devices: { [usn: string]: DeviceConfig } } = (this.config as SamsungPlatformConfig || {});
+    const { devices = [] }: { devices: Array<DeviceConfig> } = (this.config as SamsungPlatformConfig || {});
     const samsungTVs = await detectDevices();
     for (const tv of samsungTVs) {
       const { usn, friendlyName: name, modelName, location: lastKnownLocation, address: lastKnownIp, mac } = tv;
@@ -115,9 +115,8 @@ export class SamsungTVHomebridgePlatform {
   }
 
   private async pairDevices() {
-    const { devices = {} }: { devices: { [usn: string]: DeviceConfig } } = (this.config as SamsungPlatformConfig || {});
-    for (const usn in devices) {
-      const device = devices[usn];
+    const { devices = [] }: { devices: Array<DeviceConfig> } = (this.config as SamsungPlatformConfig || {});
+    for (const device of devices) {
       // Try pairing if not done already
       if (!device.ignore) {
         try {
@@ -137,14 +136,14 @@ export class SamsungTVHomebridgePlatform {
   }
 
   private getDevice(usn) {
-    const { devices = {} } = (this.config as SamsungPlatformConfig);
-    const device = devices[usn];
-    return device;
+    const { devices = [] } = (this.config as SamsungPlatformConfig);
+    const device = devices.find(d => d.usn === usn);
+    return device as DeviceConfig;
   }
 
   private registerTV(usn: string) {
     const device = this.getDevice(usn);
-    if (device.ignore) {
+    if (!device || device.ignore) {
       return;
     }
 
@@ -168,24 +167,17 @@ export class SamsungTVHomebridgePlatform {
     // set the tv name, manufacturer etc.
     tvService.setCharacteristic(this.Characteristic.ConfiguredName, tvName);
 
-    // const accessoryService = tvAccessory.addService(this.Service.AccessoryInformation);
-    // accessoryService.getCharacteristic(this.Characteristic.Manufacturer)
-    //   .on('get', (callback) => {
-    //     callback(null, 'Samsung Electronics');
-    //   });
-    // accessoryService.getCharacteristic(this.Characteristic.Model)
-    //   .on('get', (callback) => {
-    //     callback(null, device.modelName);
-    //   });
-    // accessoryService.getCharacteristic(this.Characteristic.SerialNumber)
-    //   .on('get', (callback) => {
-    //     callback(null, device.modelName);
-    //   });
+    const accessoryService = tvAccessory.getService(this.Service.AccessoryInformation) || new this.Service.AccessoryInformation();
+    accessoryService
+      .setCharacteristic(this.Characteristic.Model, device.modelName)
+      .setCharacteristic(this.Characteristic.Manufacturer, 'Samsung Electronics')
+      .setCharacteristic(this.Characteristic.Name, device.name)
+      .setCharacteristic(this.Characteristic.SerialNumber, device.usn);
 
     // set sleep discovery characteristic
     tvService.setCharacteristic(
       this.Characteristic.SleepDiscoveryMode,
-      this.Characteristic.SleepDiscoveryMode.NOT_DISCOVERABLE,
+      this.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE,
     );
 
     // handle on / off events using the Active characteristic
@@ -351,19 +343,6 @@ export class SamsungTVHomebridgePlatform {
           callback(err);
         }
       });
-
-    // speakerService
-    //   .getCharacteristic(this.Characteristic.VolumeSelector)
-    //   .on('set', async (newValue, callback) => {
-    //     this.log.info(`${tvName} - SET VolumeSelector => setNewValue: ${newValue}`);
-    //     if (newValue === this.Characteristic.VolumeSelector.INCREMENT) {
-    //       await remote.volumeUp(device);
-    //     } else {
-    //       await remote.volumeDown(device);
-    //     }
-    //     // await remote.setVolume(device, newValue);
-    //     callback(null);
-    //   });
 
     speakerService
       .getCharacteristic(this.Characteristic.Mute)

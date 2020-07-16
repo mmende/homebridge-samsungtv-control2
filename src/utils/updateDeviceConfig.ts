@@ -4,7 +4,7 @@ import { PLATFORM_NAME } from '../settings';
 
 const { readFile, copyFile, writeFile } = fs.promises;
 
-export default async (configPath: string, devices: { [usn: string]: DeviceConfig }, backup = false) => {
+export default async (configPath: string, devices: Array<DeviceConfig>, backup = false) => {
   const configFile = readFile(configPath, { encoding: 'utf8' });
   const config = JSON.parse((await configFile).toString());
   const platforms: Array<{ platform: string } | SamsungPlatformConfig> = Array.isArray(config.platforms) ? config.platforms : [];

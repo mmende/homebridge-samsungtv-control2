@@ -8,76 +8,79 @@
       "devices": {
         "title": "Samsung TV's",
         "description": "The TV's will be identified via UPNP and will be added automatically at the start.\nTherefore before starting homebridge the first time be sure your Samsung TV's are running and are connected to the local network.",
-        "type": "object",
-        "properties": {
-          "name": {
-            "title": "TV name",
-            "placeholder": "TV Livingroom",
-            "type": "string",
-            "required": true
-          },
-          "modelName": {
-            "title": "Model name",
-            "description": "This value will automatically be set by the plugin.",
-            "type": "string",
-            "required": true
-          },
-          "lastKnownLocation": {
-            "title": "Last known upnp location",
-            "description": "This value will automatically be updated by the plugin.",
-            "type": "string",
-            "required": true
-          },
-          "lastKnownIp": {
-            "title": "Last known ip address",
-            "description": "This value will automatically be updated by the plugin.",
-            "type": "string",
-            "required": true,
-            "format": "hostname"
-          },
-          "mac": {
-            "title": "The TV's MAC address",
-            "description": "This value will automatically be updated by the plugin.",
-            "type": "string",
-            "required": true,
-            "pattern": "^([A-Fa-f0-9]{2}:){5}[A-Fa-f0-9]{2}$"
-          },
-          "usn": {
-            "title": "UPNP identifier",
-            "description": "This value will automatically be set by the plugin.",
-            "type": "string",
-            "required": true
-          },
-          "delay": {
-            "title": "Delay between send keys",
-            "type": "number",
-            "required": true,
-            "minimum": 100,
-            "maximum": 3000,
-            "default": 500
-          },
-          "ignore": {
-            "title": "Ignore this TV",
-            "type": "boolean"
-          },
-          "remoteControlPort": {
-            "title": "Remote control port",
-            "description": "When not set for models older than 2014 port 55000 will be used and 8002 for newer ones. You can also try 8001 if e.g. turning off the TV doesn't work.",
-            "type": "number"
-          },
-          "token": {
-            "title": "Pairing token",
-            "description": "When not already paired and the TV was build after 2013 this value will be set at startup after you allowed pairing on your TV.",
-            "type": "number"
-          },
-          "customInputs": {
-            "title": "Custom inputs",
-            "description": "Key = Input name, value = comma seperated list of keys to send e.g. KEY_4,KEY_2 to go to channel 42",
-            "type": "object"
-          },
-          "disableUpnpSetters": {
-            "title": "If true, volume for example will be set by sending multiple volume up / down keys",
-            "type": "boolean"
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "title": "TV name",
+              "placeholder": "TV Livingroom",
+              "type": "string",
+              "required": true
+            },
+            "modelName": {
+              "title": "Model name",
+              "description": "This value will automatically be set by the plugin.",
+              "type": "string",
+              "required": true
+            },
+            "lastKnownLocation": {
+              "title": "Last known upnp location",
+              "description": "This value will automatically be updated by the plugin.",
+              "type": "string",
+              "required": true
+            },
+            "lastKnownIp": {
+              "title": "Last known ip address",
+              "description": "This value will automatically be updated by the plugin.",
+              "type": "string",
+              "required": true,
+              "format": "hostname"
+            },
+            "mac": {
+              "title": "The TV's MAC address",
+              "description": "This value will automatically be updated by the plugin.",
+              "type": "string",
+              "required": true,
+              "pattern": "^([A-Fa-f0-9]{2}:){5}[A-Fa-f0-9]{2}$"
+            },
+            "usn": {
+              "title": "UPNP identifier",
+              "description": "This value will automatically be set by the plugin.",
+              "type": "string",
+              "required": true
+            },
+            "delay": {
+              "title": "Delay between send keys",
+              "type": "number",
+              "required": true,
+              "minimum": 100,
+              "maximum": 3000,
+              "default": 500
+            },
+            "ignore": {
+              "title": "Ignore this TV",
+              "type": "boolean"
+            },
+            "remoteControlPort": {
+              "title": "Remote control port",
+              "description": "When not set for models older than 2014 port 55000 will be used and 8002 for newer ones. You can also try 8001 if e.g. turning off the TV doesn't work.",
+              "type": "number"
+            },
+            "token": {
+              "title": "Pairing token",
+              "description": "When not already paired and the TV was build after 2013 this value will be set at startup after you allowed pairing on your TV.",
+              "type": "number"
+            },
+            "customInputs": {
+              "title": "Custom inputs",
+              "description": "Key = Input name, value = comma seperated list of keys to send e.g. KEY_4,KEY_2 to go to channel 42",
+              "type": "object"
+            },
+            "disableUpnpSetters": {
+              "title": "If true, volume for example will be set by sending multiple volume up / down keys",
+              "type": "boolean"
+            }
           }
         }
       }
