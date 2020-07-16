@@ -35,6 +35,19 @@
             "required": true,
             "format": "hostname"
           },
+          "mac": {
+            "title": "The TV's MAC address",
+            "description": "This value will automatically be updated by the plugin.",
+            "type": "string",
+            "required": true,
+            "pattern": "^([A-Fa-f0-9]{2}:){5}[A-Fa-f0-9]{2}$"
+          },
+          "usn": {
+            "title": "UPNP identifier",
+            "description": "This value will automatically be set by the plugin.",
+            "type": "string",
+            "required": true
+          },
           "delay": {
             "title": "Delay between send keys",
             "type": "number",
@@ -46,6 +59,16 @@
           "ignore": {
             "title": "Ignore this TV",
             "type": "boolean"
+          },
+          "remoteControlPort": {
+            "title": "Remote control port",
+            "description": "When not set for models older than 2014 port 55000 will be used and 8002 for newer ones. You can also try 8001 if e.g. turning off the TV doesn't work.",
+            "type": "number"
+          },
+          "token": {
+            "title": "Pairing token",
+            "description": "When not already paired and the TV was build after 2013 this value will be set at startup after you allowed pairing on your TV.",
+            "type": "number"
           }
         }
       }

@@ -6,10 +6,10 @@ export interface DeviceConfig {
   mac: string
   lastKnownLocation: string
   lastKnownIp: string
+  usn: string
+  delay: number
   ignore?: boolean
   remoteControlPort?: number
-  delay: number
-  usn: string
   token?: string
 }
 
