@@ -2,6 +2,7 @@ import { Client } from 'ssdp-ts';
 import UPNP from 'node-upnp';
 import parseSN, { SamsungTVModel } from './parseSerialNumber';
 import getMacAddress from './getMacAddress';
+import filterUSN from './filterUSN';
 
 interface Headers {
   USN: string
@@ -51,11 +52,13 @@ const checkDeviceDetails = async (headers: Headers, rinfo: RemoteInfo) => {
     console.warn(`Could not get mac address for "${friendlyName}". Please replace "${mac}" with the actual mac address in your config.`); // eslint-disable-line
   }
 
+  const usn = filterUSN(headers.USN);
+
   const tv: SamsungTV = {
     friendlyName,
     modelName,
     model,
-    usn: headers.USN,
+    usn,
     mac,
     location: headers.LOCATION,
     address: rinfo.address,
