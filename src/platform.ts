@@ -1,19 +1,21 @@
 import {
   API,
+  APIEvent,
   Logger,
   PlatformAccessory,
   PlatformConfig,
   Service,
   Characteristic,
+  DynamicPlatformPlugin,
 } from 'homebridge';
-import { PLUGIN_NAME, PLATFORM_NAME } from './settings';
+import { PLUGIN_NAME/*, PLATFORM_NAME*/ } from './settings';
 import detectDevices from './utils/detectDevices';
 import * as remote from './utils/remote';
 import { DeviceConfig, SamsungPlatformConfig } from './types/deviceConfig';
-import updateDeviceConfig from './utils/updateDeviceConfig';
+// import updateDeviceConfig from './utils/updateDeviceConfig';
 import { KEYS } from 'samsung-tv-control';
 
-export class SamsungTVHomebridgePlatform {
+export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap
     .Characteristic;
@@ -21,6 +23,7 @@ export class SamsungTVHomebridgePlatform {
   // this is used to track restored cached accessories
   // public readonly accessories: PlatformAccessory[] = [];
   public readonly tvAccessories: Array<PlatformAccessory> = [];
+  private devices: Array<DeviceConfig> = [];
 
   constructor(
     public readonly log: Logger,
@@ -35,28 +38,18 @@ export class SamsungTVHomebridgePlatform {
     this.Characteristic = api.hap.Characteristic;
 
     // Add devices
-    api.on('didFinishLaunching', async () => {
-      let devices = await this.discoverDevices();
-      devices = await this.pairDevices();
-      this.log.debug(`Updating ${PLATFORM_NAME} configuration`);
-      // Update this.config
-      this.config.devices = devices;
-      // Update the actual config file and create a backup
-      await updateDeviceConfig(this.api.user.configPath(), devices, true);
+    api.on(APIEvent.DID_FINISH_LAUNCHING, async () => {
+      await this.discoverDevices();
+      await this.pairDevices();
 
       // Register all TV's
-      for (const device of devices) {
+      for (const device of this.devices) {
         this.registerTV(device.usn);
       }
 
       // Regularly discover upnp devices and update ip's, locations for registered devices
       setInterval(async () => {
-        const devices = await this.discoverDevices();
-        this.log.info(`Updating ${PLATFORM_NAME} configuration`);
-        // Update this.config
-        this.config.devices = devices;
-        // Update the actual config file without creating a backup
-        await updateDeviceConfig(this.api.user.configPath(), devices);
+        await this.discoverDevices();
       }, 1000 * 60 * 5 /* 5min */);
 
       /**
@@ -66,12 +59,20 @@ export class SamsungTVHomebridgePlatform {
     });
   }
 
+  /*
+   * This function is invoked when homebridge restores cached accessories from disk at startup.
+   * It should be used to setup event handlers for characteristics and update respective values.
+   */
+  configureAccessory(): void {
+    this.log.debug('Configuring accessory');
+  }
+
   private async discoverDevices() {
-    const { devices = [] }: { devices: Array<DeviceConfig> } = (this.config as SamsungPlatformConfig || {});
+    const devices: Array<DeviceConfig> = [];
     const samsungTVs = await detectDevices();
     for (const tv of samsungTVs) {
       const { usn, friendlyName: name, modelName, location: lastKnownLocation, address: lastKnownIp, mac } = tv;
-      let device: DeviceConfig = {
+      const device: DeviceConfig = {
         name,
         modelName,
         lastKnownLocation,
@@ -82,26 +83,60 @@ export class SamsungTVHomebridgePlatform {
       };
       // Check if the tv was in the devices list before
       // if so, only replace the relevant parts
-      const existingDevice = devices[usn];
-      if (existingDevice) {
-        device = {
-          ...existingDevice,
-          modelName: device.modelName,
-          lastKnownLocation: device.lastKnownLocation,
-          lastKnownIp: device.lastKnownIp,
-          token: device.token,
-        };
-      } else {
-        this.log.info(`Added new TV "${device.name}" to config`);
-      }
-      devices[usn] = device;
+      // const existingDevice = devices[usn];
+      // const existingDevice = existingDevices.find(d => d.usn === usn);
+      // if (existingDevice) {
+      //   devices.push({
+      //     ...existingDevice,
+      //     modelName: device.modelName,
+      //     lastKnownLocation: device.lastKnownLocation,
+      //     lastKnownIp: device.lastKnownIp,
+      //     token: device.token,
+      //   });
+      // } else {
+      this.log.info(`Discovered TV "${device.name}" with usn "${device.usn}"`);
+      devices.push(device);
+      // }
+      // devices[usn] = device;
     }
-    return devices;
+
+    // Add all existing devices that where not discovered
+    /**
+     * @todo
+     * store devices in users ?
+     */
+    // for (const existingDevice of existingDevices) {
+    //   const { usn } = existingDevice;
+    //   const device = devices.find(d => d.usn === usn);
+    //   if (!device) {
+    //     devices.push(existingDevice);
+    //   }
+    // }
+
+    // Get additional options from config
+    const configDevices = (this.config as SamsungPlatformConfig).devices || [];
+    for (const configDevice of configDevices) {
+      // Search for the device in the persistent devices and overwrite the values
+      const { usn } = configDevice;
+      const deviceIdx = devices.findIndex(d => d.usn === usn);
+      if (deviceIdx === -1) {
+        continue;
+      }
+      const device = devices[deviceIdx];
+      this.log.debug(`Found overwrites for "${device.name}" in config`);
+      devices[deviceIdx] = {
+        ...device,
+        ...configDevice,
+      };
+    }
+    // Store modified devices in persistent storage
+    // this.platformAccessory.context.devices = devices;
+    this.devices = devices;
+    // return devices;
   }
 
   private async pairDevices() {
-    const { devices = [] }: { devices: Array<DeviceConfig> } = (this.config as SamsungPlatformConfig || {});
-    for (const device of devices) {
+    for (const device of this.devices) {
       // Try pairing if not done already
       if (!device.ignore) {
         try {
@@ -117,12 +152,10 @@ export class SamsungTVHomebridgePlatform {
         }
       }
     }
-    return devices;
   }
 
   private getDevice(usn) {
-    const { devices = [] } = (this.config as SamsungPlatformConfig);
-    const device = devices.find(d => d.usn === usn);
+    const device = this.devices.find(d => d.usn === usn);
     return device as DeviceConfig;
   }
 
@@ -367,20 +400,29 @@ export class SamsungTVHomebridgePlatform {
       { id: 'youTube', label: 'YoutTube', type: this.Characteristic.InputSourceType.APPLICATION, fn: remote.openYouTube },
     ];
     const sources = [...inputSources];
-    const { customInputs = {} } = device;
-    for (const cInput in customInputs) {
-      const keys = customInputs[cInput].split(',')
-        .map(k => k.trim())
-        .filter(k => {
-          if (!KEYS[k]) {
-            this.log.warn(`${tvName} - Ignoring invalid key "${k}" in customInput "${cInput}"`);
-            return false;
-          }
-          return true;
-        });
+    const { inputs = [] } = device;
+    for (const cInput of inputs) {
+      let keys: Array<KEYS> = [];
+      if (/^[0-9]+$/.test(cInput.keys)) {
+        for (let i = 0; i < cInput.keys.length; ++i) {
+          const num = cInput.keys[i];
+          keys.push(KEYS[`KEY_${num}`]);
+        }
+        keys.push(KEYS.KEY_ENTER);
+      } else {
+        keys = cInput.keys.split(',')
+          .map(k => k.trim())
+          .filter(k => {
+            if (!KEYS[k]) {
+              this.log.warn(`${tvName} - Ignoring invalid key "${k}" in customInput "${cInput}"`);
+              return false;
+            }
+            return true;
+          }) as Array<KEYS>;
+      }
       sources.push({
-        id: cInput,
-        label: cInput,
+        id: cInput.name,
+        label: cInput.name,
         type: this.Characteristic.InputSourceType.OTHER,
         fn: async (config: DeviceConfig) => {
           await remote.sendKeys(config, keys as KEYS[]);

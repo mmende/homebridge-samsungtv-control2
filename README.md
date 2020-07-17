@@ -16,24 +16,41 @@ There is a homekit limitation that allows only one TV per bridge. Therefore each
 
 Some Samsung TV's (actually all I was able to test) turn off their network card when being turned off completely. Therefore these models cannot be turned on again by this plugin since they are just not reachable over the network. However some newer models might support Wake-on-LAN or WoWLAN which this plugin tries to use to turn your TV back on.
 
-# Custom inputs
+# Customize devices
 
-After you started homebridge and see your devices being addes successfully to your config (might need to refresh the UI) you can add a `customInputs` property to e.g. be able to switch channels by selecting this input as input source in the home app. The value represents the key sequence that needs to be pressed to open that channel. An example device config would look like this:
+After you started homebridge you should see the device names with their usn in the log. To customize a device, add an object with the usn and any option you want to modify to the devices list under the `SamsungTVControl` platform. You could e.g. change the initial name like so:
 
 ```json
 {
-  "name": "Bedroom TV",
-  "modelName": "UE40D6100",
-  "lastKnownLocation": "http://192.168.0.42:52235/dmr/SamsungMRDesc.xml",
-  "lastKnownIp": "192.168.0.42",
-  "mac": "00:4f:16:e2:1a:c8",
-  "usn": "a7001fbe-c776-11ea-87d0-0242ac130003",
-  "delay": 500,
-  "customInputs": {
-    "ZDF HD": "KEY_2,KEY_ENTER",
-    "ProSieben": "KEY_3,KEY_0,KEY_4,KEY_ENTER"
-  }
+  "platform": "SamsungTVControl",
+  "devices": [
+    {
+      "usn": "a7001fbe-c776-11ea-87d0-0242ac130003",
+      "name": "Bedroom TV"
+    }
+  ]
 }
 ```
 
-After restarting the inputs `ZDF HD` and `ProSieben` would be available as input source for the TV. This is of course not limited to channels only. You can also play around with delay if the button press speed is to fast or you think your TV can handle smaller delays without skipping keys.
+# Custom inputs
+
+The `inputs` property allows you to add extra inputs to e.g. switch channels or start the sleep mode. Each input requires a `name` which represents the input name and a `keys` property which is either a string containing numbers only or a comma seperated list of keys ([possible keys](https://github.com/Toxblh/samsung-tv-control/blob/master/src/keys.ts)). The keys will then be send to the tv with a delay of `500ms` (or what you configured) in between. Here is an example:
+
+```json
+{
+  "platform": "SamsungTVControl",
+  "devices": [
+    {
+      "usn": "a7001fbe-c776-11ea-87d0-0242ac130003",
+      "name": "Bedroom TV",
+      "devices": [
+        { "name": "ZDF HD", "keys": "102" },
+        {
+          "name": "Sleep 30m",
+          "keys": "KEY_TOOLS,KEY_DOWN,KEY_DOWN,KEY_DOWN,KEY_ENTER,KEY_DOWN,KEY_ENTER,KEY_RETURN"
+        }
+      ]
+    }
+  ]
+}
+```

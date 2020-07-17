@@ -11,9 +11,10 @@ export interface DeviceConfig {
   ignore?: boolean
   remoteControlPort?: number
   token?: string
-  customInputs?: {
-    [label: string]: string
-  }
+  inputs?: Array<{
+    name: string,
+    keys: string
+  }>
   disableUpnpSetters?: boolean
 }
 
