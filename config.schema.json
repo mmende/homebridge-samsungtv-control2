@@ -55,8 +55,7 @@
               "type": "number",
               "required": true,
               "minimum": 100,
-              "maximum": 3000,
-              "default": 500
+              "maximum": 3000
             },
             "ignore": {
               "title": "Ignore this TV",
