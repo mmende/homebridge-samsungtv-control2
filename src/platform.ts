@@ -14,6 +14,7 @@ import * as remote from './utils/remote';
 import { DeviceConfig, SamsungPlatformConfig } from './types/deviceConfig';
 // import updateDeviceConfig from './utils/updateDeviceConfig';
 import { KEYS } from 'samsung-tv-control';
+import flatten from 'lodash.flatten';
 
 export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
@@ -410,15 +411,35 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         }
         keys.push(KEYS.KEY_ENTER);
       } else {
-        keys = cInput.keys.split(',')
-          .map(k => k.trim())
-          .filter(k => {
-            if (!KEYS[k]) {
-              this.log.warn(`${tvName} - Ignoring invalid key "${k}" in customInput "${cInput}"`);
-              return false;
-            }
-            return true;
-          }) as Array<KEYS>;
+        let keysArr = cInput.keys.split(',')
+          .map(k => k.trim() // remove whitespace characters
+            .toUpperCase() // allow lowercase
+            .replace(/^(KEY_)?/, 'KEY_'), // Add KEY_ if not present
+          ).map(
+            // Allow repetitions like KEY_DOWN*3
+            k => {
+              const re = /^(.*)(\*([0-9]+))$/;
+              const match = re.exec(k);
+              if (match) {
+                const rep = parseInt(match[3], 10);
+                const arr: Array<string> = [];
+                for (let i = 0; i < rep; ++i) {
+                  arr.push(match[1]);
+                }
+                return arr;
+              }
+              return k;
+            },
+          );
+        keysArr = flatten(keysArr);
+
+        keys = (keysArr as Array<string>).filter(k => {
+          if (!KEYS[k]) {
+            this.log.warn(`${tvName} - Ignoring invalid key "${k}" in customInput "${cInput}"`);
+            return false;
+          }
+          return true;
+        }) as Array<KEYS>;
       }
       sources.push({
         id: cInput.name,

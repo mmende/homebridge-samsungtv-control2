@@ -34,7 +34,7 @@ After you started homebridge you should see the device names with their usn in t
 
 # Custom inputs
 
-The `inputs` property allows you to add extra inputs to e.g. switch channels or start the sleep mode. Each input requires a `name` which represents the input name and a `keys` property which is either a string containing numbers only or a comma seperated list of keys ([possible keys](https://github.com/Toxblh/samsung-tv-control/blob/master/src/keys.ts)). The keys will then be send to the tv with a delay of `500ms` (or what you configured) in between. Here is an example:
+The `inputs` property allows you to add extra inputs to e.g. switch channels or start the sleep mode. Each input requires a `name` which represents the input name and a `keys` property which is either a string containing numbers only or a comma seperated list of keys. The keys will then be send to the tv with a delay of `500ms` (or what you configured) in between. Here is an example:
 
 ```json
 {
@@ -47,10 +47,12 @@ The `inputs` property allows you to add extra inputs to e.g. switch channels or 
         { "name": "ZDF HD", "keys": "102" },
         {
           "name": "Sleep 30m",
-          "keys": "KEY_TOOLS,KEY_DOWN,KEY_DOWN,KEY_DOWN,KEY_ENTER,KEY_DOWN,KEY_ENTER,KEY_RETURN"
+          "keys": "tools,down*3,enter,down,enter,return"
         }
       ]
     }
   ]
 }
 ```
+
+**Note: You can find a list of all supported keys [here](https://github.com/Toxblh/samsung-tv-control/blob/master/src/keys.ts). Casing doesn't matter and you can also leave away `KEY_` for convenience as seen in the example. If you need to send a key multiple times in a row you can add e.g. `*3` to send it three times.**

@@ -30,6 +30,7 @@
     "upnp"
   ],
   "dependencies": {
+    "lodash.flatten": "^4.4.0",
     "macfromip": "^1.1.1",
     "node-upnp": "^1.2.0",
     "node-upnp-remote": "^1.2.0",
