@@ -43,7 +43,7 @@ The `inputs` property allows you to add extra inputs to e.g. switch channels or 
     {
       "usn": "a7001fbe-c776-11ea-87d0-0242ac130003",
       "name": "Bedroom TV",
-      "devices": [
+      "inputs": [
         { "name": "ZDF HD", "keys": "102" },
         {
           "name": "Sleep 30m",
