@@ -8,13 +8,15 @@ import {
   Characteristic,
   DynamicPlatformPlugin,
 } from 'homebridge';
-import { PLUGIN_NAME/*, PLATFORM_NAME*/ } from './settings';
+import { PLUGIN_NAME, PLATFORM_NAME } from './settings';
 import detectDevices from './utils/detectDevices';
 import * as remote from './utils/remote';
 import { DeviceConfig, SamsungPlatformConfig } from './types/deviceConfig';
-// import updateDeviceConfig from './utils/updateDeviceConfig';
-import { KEYS } from 'samsung-tv-control';
+import { KEYS, APPS } from 'samsung-tv-control';
 import flatten from 'lodash.flatten';
+import storage from 'node-persist';
+
+const DEVICES_KEY = `${PLATFORM_NAME}_devices`;
 
 export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
@@ -25,6 +27,10 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
   // public readonly accessories: PlatformAccessory[] = [];
   public readonly tvAccessories: Array<PlatformAccessory> = [];
   private devices: Array<DeviceConfig> = [];
+  // A list of tokens that where received but not stored yet
+  private tokens: { [usn: string]: string } = {}
+
+  // private store: storage
 
   constructor(
     public readonly log: Logger,
@@ -40,8 +46,14 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
 
     // Add devices
     api.on(APIEvent.DID_FINISH_LAUNCHING, async () => {
-      await this.discoverDevices();
-      await this.pairDevices();
+      await storage.init({
+        logging: (...args) => this.log.debug(`${PLATFORM_NAME} db -`, ...args),
+      });
+
+      let devices = await this.discoverDevices();
+      devices = await this.applyConfig(devices);
+      this.devices = await this.pairDevices(devices);
+      await this.applyUnsafedTokens();
 
       // Register all TV's
       for (const device of this.devices) {
@@ -50,7 +62,13 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
 
       // Regularly discover upnp devices and update ip's, locations for registered devices
       setInterval(async () => {
-        await this.discoverDevices();
+        const devices = await this.discoverDevices();
+        this.devices = await this.applyConfig(devices);
+        await this.applyUnsafedTokens();
+        /**
+         * @todo
+         * add previously not registered devices
+         */
       }, 1000 * 60 * 5 /* 5min */);
 
       /**
@@ -69,6 +87,11 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   private async discoverDevices() {
+    let existingDevices: Array<DeviceConfig> = await storage.getItem(DEVICES_KEY);
+    if (!Array.isArray(existingDevices)) {
+      existingDevices = [];
+    }
+
     const devices: Array<DeviceConfig> = [];
     const samsungTVs = await detectDevices();
     for (const tv of samsungTVs) {
@@ -85,35 +108,78 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       // Check if the tv was in the devices list before
       // if so, only replace the relevant parts
       // const existingDevice = devices[usn];
-      // const existingDevice = existingDevices.find(d => d.usn === usn);
-      // if (existingDevice) {
-      //   devices.push({
-      //     ...existingDevice,
-      //     modelName: device.modelName,
-      //     lastKnownLocation: device.lastKnownLocation,
-      //     lastKnownIp: device.lastKnownIp,
-      //     token: device.token,
-      //   });
-      // } else {
-      this.log.info(`Discovered TV "${device.name}" with usn "${device.usn}"`);
-      devices.push(device);
-      // }
-      // devices[usn] = device;
+      const existingDevice = existingDevices.find(d => d.usn === usn);
+      if (existingDevice) {
+        this.log.debug(`Rediscovered previously seen "${device.name}" with usn ${device.usn}`);
+        devices.push({
+          ...existingDevice,
+          modelName: device.modelName,
+          lastKnownLocation: device.lastKnownLocation,
+          lastKnownIp: device.lastKnownIp,
+          token: device.token,
+          discovered: true,
+        });
+      } else {
+        this.log.info(`Discovered new SamsungTV "${device.name}" with usn "${device.usn}"`);
+        devices.push({ ...device, discovered: true });
+      }
     }
 
     // Add all existing devices that where not discovered
-    /**
-     * @todo
-     * store devices in users ?
-     */
-    // for (const existingDevice of existingDevices) {
-    //   const { usn } = existingDevice;
-    //   const device = devices.find(d => d.usn === usn);
-    //   if (!device) {
-    //     devices.push(existingDevice);
-    //   }
-    // }
+    for (const existingDevice of existingDevices) {
+      const { usn } = existingDevice;
+      const device = devices.find(d => d.usn === usn);
+      if (!device) {
+        devices.push(existingDevice);
+      }
+    }
 
+    // Update devices
+    await storage.updateItem(DEVICES_KEY, devices);
+    return devices;
+  }
+
+  /**
+   * Invokes pairing for all discovered devices.
+   */
+  private async pairDevices(devices: Array<DeviceConfig>) {
+    for (const device of devices) {
+      // Try pairing if the device was actually discovered and not paired already
+      if (!device.ignore && device.discovered) {
+        try {
+          const token = await remote.pair(device, this.log);
+          if (token) {
+            // Add token to the device so that homebridge doesn't need to restart
+            this.tokens[device.usn] = token;
+            this.log.info(`Received pairing token "${token}" for "${device.name}" usn "${device.usn}". Please add to config `);
+          }
+        } catch (err) {
+          this.log.warn(
+            'Did not receive pairing token. Either you did not click "Allow" in time or your TV might not be supported.' +
+            'You might just want to restart homebridge and retry.',
+          );
+        }
+      }
+    }
+    return devices;
+  }
+
+  /**
+   * Adds unsafed tokens to the devices
+   */
+  private async applyUnsafedTokens() {
+    for (const usn in this.tokens) {
+      const device = this.devices.find(d => d.usn === usn);
+      if (device) {
+        device.token = this.tokens[usn];
+      }
+    }
+  }
+
+  /**
+   * Adds the user modifications to each of devices
+   */
+  private async applyConfig(devices: Array<DeviceConfig>) {
     // Get additional options from config
     const configDevices = (this.config as SamsungPlatformConfig).devices || [];
     for (const configDevice of configDevices) {
@@ -130,29 +196,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         ...configDevice,
       };
     }
-    // Store modified devices in persistent storage
-    // this.platformAccessory.context.devices = devices;
-    this.devices = devices;
-    // return devices;
-  }
-
-  private async pairDevices() {
-    for (const device of this.devices) {
-      // Try pairing if not done already
-      if (!device.ignore) {
-        try {
-          const token = await remote.pair(device, this.log);
-          if (token) {
-            device.token = token;
-          }
-        } catch (err) {
-          this.log.warn(
-            'Did not receive pairing token. Either you did not click "Allow" in time or your TV might not be supported.' +
-            'You might just want to restart homebridge and retry.',
-          );
-        }
-      }
-    }
+    return devices;
   }
 
   private getDevice(usn) {
@@ -224,6 +268,21 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
           callback(err);
         }
       });
+
+    // Update the active state every 15 seconds
+    setInterval(async () => {
+      let newState = this.Characteristic.Active.ACTIVE;
+      try {
+        const isActive = await remote.getActive(this.getDevice(usn));
+        if (!isActive) {
+          newState = this.Characteristic.Active.INACTIVE;
+        }
+      } catch (err) {
+        newState = this.Characteristic.Active.INACTIVE;
+      }
+      // this.log.debug('Polled tv active state', newState);
+      tvService.updateCharacteristic(this.Characteristic.Active, newState);
+    }, 1000 * 15);
 
     tvService
       .getCharacteristic(this.Characteristic.Brightness)
@@ -364,6 +423,25 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       });
 
     speakerService
+      .getCharacteristic(this.Characteristic.VolumeSelector)
+      .on('set', async (newValue, callback) => {
+        this.log.debug(`${tvName} - SET VolumeSelector => setNewValue: ${newValue}`);
+        try {
+          if (newValue === this.Characteristic.VolumeSelector.INCREMENT) {
+            await remote.volumeUp(this.getDevice(usn));
+          } else {
+            await remote.volumeDown(this.getDevice(usn));
+          }
+          const volume = await remote.getVolume(this.getDevice(usn));
+          speakerService.getCharacteristic(this.Characteristic.Mute).updateValue(false);
+          speakerService.getCharacteristic(this.Characteristic.Volume).updateValue(volume);
+          callback(null);
+        } catch (err) {
+          callback(err);
+        }
+      });
+
+    speakerService
       .getCharacteristic(this.Characteristic.Mute)
       .on('get', async callback => {
         this.log.debug(`${tvName} - GET Mute`);
@@ -384,25 +462,27 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         }
       });
 
+    // tvService.addLinkedService(speakerService);
+
     const inputSources = [
       { id: 'tv', label: 'TV', type: this.Characteristic.InputSourceType.TUNER, fn: remote.openTV },
-      { id: 'hdmi', label: 'HDMI', type: this.Characteristic.InputSourceType.HDMI, fn: remote.openHDMI },
-      { id: 'hdmi1', label: 'HDMI1', type: this.Characteristic.InputSourceType.HDMI, fn: remote.openHDMI1, disabled: true },
-      { id: 'hdmi2', label: 'HDMI2', type: this.Characteristic.InputSourceType.HDMI, fn: remote.openHDMI2, disabled: true },
-      { id: 'hdmi3', label: 'HDMI3', type: this.Characteristic.InputSourceType.HDMI, fn: remote.openHDMI3, disabled: true },
-      { id: 'hdmi4', label: 'HDMI4', type: this.Characteristic.InputSourceType.HDMI, fn: remote.openHDMI4, disabled: true },
-      { id: 'appleTv', label: 'AppleTV', type: this.Characteristic.InputSourceType.APPLICATION, fn: remote.openAppleTV, disabled: true },
-      { id: 'netflix', label: 'Netflix', type: this.Characteristic.InputSourceType.APPLICATION, fn: remote.openNetflix, disabled: true },
-      {
-        id: 'primeVideo', label: 'Prime Video', type: this.Characteristic.InputSourceType.APPLICATION, fn: remote.openPrimeVideo,
-        disabled: true,
-      },
-      { id: 'spotify', label: 'Spotify', type: this.Characteristic.InputSourceType.APPLICATION, fn: remote.openSpotify, disabled: true },
-      { id: 'youTube', label: 'YoutTube', type: this.Characteristic.InputSourceType.APPLICATION, fn: remote.openYouTube },
     ];
     const sources = [...inputSources];
     const { inputs = [] } = device;
     for (const cInput of inputs) {
+      // Opening apps
+      if (APPS[cInput.keys]) {
+        sources.push({
+          id: cInput.name,
+          label: cInput.name,
+          type: this.Characteristic.InputSourceType.APPLICATION,
+          fn: async (config: DeviceConfig) => {
+            await remote.openApp(config, APPS[cInput.keys]);
+          },
+        });
+        continue;
+      }
+      // Sending keys
       let keys: Array<KEYS> = [];
       if (/^[0-9]+$/.test(cInput.keys)) {
         for (let i = 0; i < cInput.keys.length; ++i) {
@@ -441,10 +521,12 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
           return true;
         }) as Array<KEYS>;
       }
+      const type = keys.length === 1 && /^KEY_HDMI[0-4]?$/.test(keys[0]) ?
+        this.Characteristic.InputSourceType.HDMI : this.Characteristic.InputSourceType.OTHER;
       sources.push({
         id: cInput.name,
         label: cInput.name,
-        type: this.Characteristic.InputSourceType.OTHER,
+        type,
         fn: async (config: DeviceConfig) => {
           await remote.sendKeys(config, keys as KEYS[]);
         },
@@ -471,16 +553,14 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       });
 
     for (let i = 0; i < sources.length; ++i) {
-      const { id, label, type, disabled } = sources[i];
-      if (!disabled) {
-        const inputService = tvAccessory.addService(this.Service.InputSource, id, label);
-        inputService
-          .setCharacteristic(this.Characteristic.Identifier, i)
-          .setCharacteristic(this.Characteristic.ConfiguredName, label)
-          .setCharacteristic(this.Characteristic.IsConfigured, this.Characteristic.IsConfigured.CONFIGURED)
-          .setCharacteristic(this.Characteristic.InputSourceType, type);
-        tvService.addLinkedService(inputService);
-      }
+      const { id, label, type } = sources[i];
+      const inputService = tvAccessory.addService(this.Service.InputSource, id, label);
+      inputService
+        .setCharacteristic(this.Characteristic.Identifier, i)
+        .setCharacteristic(this.Characteristic.ConfiguredName, label)
+        .setCharacteristic(this.Characteristic.IsConfigured, this.Characteristic.IsConfigured.CONFIGURED)
+        .setCharacteristic(this.Characteristic.InputSourceType, type);
+      tvService.addLinkedService(inputService);
     }
 
     /**

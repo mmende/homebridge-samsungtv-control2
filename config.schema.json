@@ -23,6 +23,11 @@
               "type": "string",
               "required": true
             },
+            "token": {
+              "title": "Pairing token",
+              "description": "Some devices require pairing them before the plugin is allowed to control them. In this case look in the log for the pairing token for this device and add it to your config.",
+              "type": "string"
+            },
             "delay": {
               "title": "Delay between send keys",
               "type": "number",

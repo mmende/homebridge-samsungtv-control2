@@ -71,7 +71,7 @@ export const sendKeys = async (config: DeviceConfig, keys: Array<KEYS>) => {
   control.closeConnection();
 };
 
-const openApp = async (config: DeviceConfig, app: APPS) => {
+export const openApp = async (config: DeviceConfig, app: APPS) => {
   const cfg = getRemoteConfig(config);
   const control = new Samsung(cfg);
   await control.openAppPromise(app);
@@ -253,22 +253,22 @@ export const openHDMI4 = async (config: DeviceConfig) => {
   await sendKey(config, KEYS.KEY_HDMI4);
 };
 
-export const openAppleTV = async (config: DeviceConfig) => {
-  await openApp(config, APPS['Apple TV']);
-};
-
-export const openNetflix = async (config: DeviceConfig) => {
-  await openApp(config, APPS.Netflix);
-};
-
-export const openPrimeVideo = async (config: DeviceConfig) => {
-  await openApp(config, APPS['Prime Video']);
-};
-
-export const openSpotify = async (config: DeviceConfig) => {
-  await openApp(config, APPS.Spotify);
-};
-
-export const openYouTube = async (config: DeviceConfig) => {
-  await openApp(config, APPS.YouTube);
-};
+// export const openAppleTV = async (config: DeviceConfig) => {
+//   await openApp(config, APPS['Apple TV']);
+// };
+// 
+// export const openNetflix = async (config: DeviceConfig) => {
+//   await openApp(config, APPS.Netflix);
+// };
+// 
+// export const openPrimeVideo = async (config: DeviceConfig) => {
+//   await openApp(config, APPS['Prime Video']);
+// };
+// 
+// export const openSpotify = async (config: DeviceConfig) => {
+//   await openApp(config, APPS.Spotify);
+// };
+// 
+// export const openYouTube = async (config: DeviceConfig) => {
+//   await openApp(config, APPS.YouTube);
+// };

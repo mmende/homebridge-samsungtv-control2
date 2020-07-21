@@ -16,6 +16,7 @@ export interface DeviceConfig {
     keys: string
   }>
   disableUpnpSetters?: boolean
+  discovered?: boolean
 }
 
 export interface SamsungPlatformConfig {
