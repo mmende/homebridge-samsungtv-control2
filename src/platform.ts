@@ -466,11 +466,11 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         }
       });
 
-    // tvService.addLinkedService(speakerService);
+    tvService.addLinkedService(speakerService);
 
     const inputSources = [
-      { id: '-', label: '-', type: this.Characteristic.InputSourceType.OTHER },
-      { id: 'tv', label: 'TV', type: this.Characteristic.InputSourceType.TUNER, fn: remote.openTV },
+      { label: '-', type: this.Characteristic.InputSourceType.OTHER },
+      { label: 'TV', type: this.Characteristic.InputSourceType.TUNER, fn: remote.openTV },
     ];
     const sources = [...inputSources];
     const { inputs = [] } = device;
@@ -478,7 +478,6 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       // Opening apps
       if (APPS[cInput.keys]) {
         sources.push({
-          id: cInput.name,
           label: cInput.name,
           type: this.Characteristic.InputSourceType.APPLICATION,
           fn: async (config: DeviceConfig) => {
@@ -529,7 +528,6 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       const type = keys.length === 1 && /^KEY_HDMI[0-4]?$/.test(keys[0]) ?
         this.Characteristic.InputSourceType.HDMI : this.Characteristic.InputSourceType.OTHER;
       sources.push({
-        id: cInput.name,
         label: cInput.name,
         type,
         fn: async (config: DeviceConfig) => {
@@ -569,12 +567,13 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       });
 
     for (let i = 0; i < sources.length; ++i) {
-      const { id, label, type } = sources[i];
-      const inputService = tvAccessory.addService(this.Service.InputSource, id, label);
+      const { label, type } = sources[i];
+      const inputService = tvAccessory.addService(this.Service.InputSource, `input-${i}`, label);
       inputService
         .setCharacteristic(this.Characteristic.Identifier, i)
         .setCharacteristic(this.Characteristic.ConfiguredName, label)
         .setCharacteristic(this.Characteristic.IsConfigured, this.Characteristic.IsConfigured.CONFIGURED)
+        .setCharacteristic(this.Characteristic.CurrentVisibilityState, this.Characteristic.CurrentVisibilityState.SHOWN)
         .setCharacteristic(this.Characteristic.InputSourceType, type);
       tvService.addLinkedService(inputService);
     }
