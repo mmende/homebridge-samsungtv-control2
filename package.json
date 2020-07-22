@@ -1,7 +1,7 @@
 {
   "displayName": "SamsungTV Control",
   "name": "homebridge-samsungtv-control",
-  "version": "2.0.0-alpha.5",
+  "version": "2.0.0-alpha.6",
   "description": "Homebridge Samsung TV plugin to control Samsung TV's",
   "license": "MIT",
   "author": "mmende",
@@ -12,6 +12,10 @@
   "bugs": {
     "url": "https://github.com/mmende/homebridge-samsungtv-control2/issues"
   },
+  "files": [
+    "dist/*",
+    "config.schema.json"
+  ],
   "engines": {
     "node": ">=10.17.0",
     "homebridge": ">0.4.53"
