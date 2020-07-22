@@ -7,7 +7,7 @@
     "properties": {
       "devices": {
         "title": "Samsung TV's",
-        "description": "The TV's will be identified via UPNP and will be added automatically at the start.\nTherefore before starting homebridge the first time be sure your Samsung TV's are running and are connected to the local network.",
+        "description": "The TV's will be identified via upnp. Therefore you should turn all Samsung TV's on before starting with the plugin the first time. To customize them look for the correct usn in the homebridge logs.",
         "type": "array",
         "items": {
           "type": "object",
@@ -19,13 +19,13 @@
             },
             "usn": {
               "title": "UPNP identifier",
-              "description": "This value will automatically be set by the plugin.",
+              "description": "Use the usn posted in the homebridge logs.",
               "type": "string",
               "required": true
             },
             "token": {
               "title": "Pairing token",
-              "description": "Some devices require pairing them before the plugin is allowed to control them. In this case look in the log for the pairing token for this device and add it to your config.",
+              "description": "Some devices require pairing them before the plugin can control them. In this case look in the log for the pairing token for this device and add it to your config.",
               "type": "string"
             },
             "delay": {
@@ -62,7 +62,7 @@
             },
             "disableUpnpSetters": {
               "title": "Disable upnp setters",
-              "description": "If true, volume for example will be set by sending multiple volume up / down keys",
+              "description": "If true, volume for example will be set by sending multiple volume up / down keys instead of using upnp to set the value exactly. Some tv's might not support upnp setters however where this option comes in place.",
               "type": "boolean"
             }
           }
