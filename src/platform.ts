@@ -53,7 +53,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       let devices = await this.discoverDevices();
       devices = await this.applyConfig(devices);
       this.devices = await this.pairDevices(devices);
-      await this.applyUnsafedTokens();
+      await this.applyUnsavedTokens();
 
       // Register all TV's
       for (const device of this.devices) {
@@ -64,7 +64,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       setInterval(async () => {
         const devices = await this.discoverDevices();
         this.devices = await this.applyConfig(devices);
-        await this.applyUnsafedTokens();
+        await this.applyUnsavedTokens();
         /**
          * @todo
          * add previously not registered devices
@@ -167,7 +167,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
   /**
    * Adds unsafed tokens to the devices
    */
-  private async applyUnsafedTokens() {
+  private async applyUnsavedTokens() {
     for (const usn in this.tokens) {
       const device = this.devices.find(d => d.usn === usn);
       if (device) {
@@ -533,6 +533,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       });
     }
 
+    // Set current input source to 0 = tv
     tvService.setCharacteristic(this.Characteristic.ActiveIdentifier, 0);
     // handle input source changes
     tvService
