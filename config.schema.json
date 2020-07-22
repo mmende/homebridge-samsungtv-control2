@@ -18,7 +18,7 @@
               "type": "string"
             },
             "usn": {
-              "title": "UPNP identifier",
+              "title": "UPNP identifier (usn)",
               "description": "Use the usn posted in the homebridge logs.",
               "type": "string",
               "required": true
