@@ -469,6 +469,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
     // tvService.addLinkedService(speakerService);
 
     const inputSources = [
+      { id: '-', label: '-', type: this.Characteristic.InputSourceType.OTHER },
       { id: 'tv', label: 'TV', type: this.Characteristic.InputSourceType.TUNER, fn: remote.openTV },
     ];
     const sources = [...inputSources];
@@ -540,15 +541,25 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
     // Set current input source to 0 = tv
     tvService.setCharacteristic(this.Characteristic.ActiveIdentifier, 0);
     // handle input source changes
+    let resetActiveIdentifierTimer: NodeJS.Timeout;
     tvService
       .getCharacteristic(this.Characteristic.ActiveIdentifier)
       .on('set', async (newValue, callback) => {
+        // Clear old timeout if not cleared already
+        clearTimeout(resetActiveIdentifierTimer);
+        // Switch back to "TV" input source after 3 seconds
+        resetActiveIdentifierTimer = setTimeout(() => {
+          tvService.updateCharacteristic(this.Characteristic.ActiveIdentifier, 0);
+        }, 3000);
+
         // the value will be the value you set for the Identifier Characteristic
         // on the Input Source service that was selected - see input sources below.
         const inputSource = sources[newValue];
         this.log.debug(`${tvName} - SET Active Identifier => setNewValue: ${newValue} (${inputSource.label})`);
         try {
-          await inputSource.fn(this.getDevice(usn));
+          if (typeof inputSource.fn === 'function') {
+            await inputSource.fn(this.getDevice(usn));
+          }
           tvService.updateCharacteristic(this.Characteristic.ActiveIdentifier, newValue);
         } catch (err) {
           callback(err);
