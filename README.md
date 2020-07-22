@@ -11,7 +11,7 @@ After you started homebridge you should see the device names with their usn in t
   "platform": "SamsungTVControl",
   "devices": [
     {
-      "usn": "a7001fbe-c776-11ea-87d0-0242ac130003",
+      "usn": "uuid:a7001fbe-c776-11ea-87d0-0242ac130003",
       "name": "Bedroom TV"
     }
   ]
@@ -27,7 +27,7 @@ Younger TV's (after 2013) might require being paired before the plugin is able t
   "platform": "SamsungTVControl",
   "devices": [
     {
-      "usn": "a7001fbe-c776-11ea-87d0-0242ac130003",
+      "usn": "uuid:a7001fbe-c776-11ea-87d0-0242ac130003",
       "token": "SEE_TOKEN_IN_HOMEBRIDGE_LOG",
       "name": "Bedroom TV"
     }
@@ -53,7 +53,7 @@ Some Samsung TV's (actually all I was able to test) turn off their network card 
 
 # Custom inputs
 
-By default only TV will be added as input source which triggers sending the TV key to e.g. get back to the tuner when hdmi was previously selected. The `inputs` property allows you to add extra inputs to e.g. switch channels, start sleep mode or open an app (if supported). Each input requires a `name` which represents the input name and a `keys` property which is either a string containing numbers only, a comma seperated list of keys or a single app name from [this list](https://github.com/Toxblh/samsung-tv-control/blob/HEAD/src/apps.ts). The keys will then be send to the tv with a delay of `500ms` (or what you configured) in between. 
+By default only TV will be added as input source which triggers sending the TV key to e.g. get back to the tuner when hdmi was previously selected. The `inputs` property allows you to add extra inputs to e.g. switch channels, start sleep mode or open an app (if supported). Each input requires a `name` which represents the input name and a `keys` property which is either a string containing numbers only, a comma seperated list of keys or a single app name from [this list](https://github.com/Toxblh/samsung-tv-control/blob/HEAD/src/apps.ts). The keys will then be send to the tv with a delay of `500ms` (or what you configured) in between.
 
 Here is an example:
 
@@ -62,7 +62,7 @@ Here is an example:
   "platform": "SamsungTVControl",
   "devices": [
     {
-      "usn": "a7001fbe-c776-11ea-87d0-0242ac130003",
+      "usn": "uuid:a7001fbe-c776-11ea-87d0-0242ac130003",
       "name": "Bedroom TV",
       "inputs": [
         {
