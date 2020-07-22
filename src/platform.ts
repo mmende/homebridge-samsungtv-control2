@@ -57,6 +57,9 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
 
       // Register all TV's
       for (const device of this.devices) {
+        // Log all devices so that the user knows how to configure them
+        this.log.info(`Found device "${device.name}" (${device.modelName}), usn: ${device.usn}`);
+        // Register it
         this.registerTV(device.usn);
       }
 
@@ -120,7 +123,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
           discovered: true,
         });
       } else {
-        this.log.info(`Discovered new device "${device.name}" (${device.modelName}), usn: "${device.usn}"`);
+        this.log.debug(`Discovered new device "${device.name}" (${device.modelName}), usn: "${device.usn}"`);
         devices.push({ ...device, discovered: true });
       }
     }
