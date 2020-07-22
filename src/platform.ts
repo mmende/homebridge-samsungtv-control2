@@ -110,7 +110,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       // const existingDevice = devices[usn];
       const existingDevice = existingDevices.find(d => d.usn === usn);
       if (existingDevice) {
-        this.log.debug(`Rediscovered previously seen "${device.name}" with usn ${device.usn}`);
+        this.log.debug(`Rediscovered previously seen device "${device.name}" (${device.modelName}), usn: ${device.usn}`);
         devices.push({
           ...existingDevice,
           modelName: device.modelName,
@@ -120,7 +120,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
           discovered: true,
         });
       } else {
-        this.log.info(`Discovered new SamsungTV "${device.name}" with usn "${device.usn}"`);
+        this.log.info(`Discovered new device "${device.name}" (${device.modelName}), usn: "${device.usn}"`);
         devices.push({ ...device, discovered: true });
       }
     }
@@ -130,6 +130,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       const { usn } = existingDevice;
       const device = devices.find(d => d.usn === usn);
       if (!device) {
+        this.log.debug(`Adding not discovered, previously seen device "${existingDevice.name}" (${existingDevice.modelName}), usn: ${existingDevice.usn}`);
         devices.push(existingDevice);
       }
     }
@@ -151,7 +152,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
           if (token) {
             // Add token to the device so that homebridge doesn't need to restart
             this.tokens[device.usn] = token;
-            this.log.info(`Received pairing token "${token}" for "${device.name}" usn "${device.usn}". Please add to config `);
+            this.log.info(`Received pairing token "${token}" for "${device.name}" (${device.modelName}), usn: "${device.usn}". Please add to config.`);
           }
         } catch (err) {
           this.log.warn(
@@ -190,7 +191,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         continue;
       }
       const device = devices[deviceIdx];
-      this.log.debug(`Found overwrites for "${device.name}" in config`);
+      this.log.debug(`Found config for device "${device.name}" (${device.modelName}), usn: ${device.usn}`);
       devices[deviceIdx] = {
         ...device,
         ...configDevice,

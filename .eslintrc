@@ -9,9 +9,7 @@
     "ecmaVersion": 2018,
     "sourceType": "module"
   },
-  "ignorePatterns": [
-    "dist"
-  ],
+  "ignorePatterns": ["dist"],
   "rules": {
     "quotes": ["warn", "single"],
     "indent": ["warn", 2, { "SwitchCase": 1 }],
@@ -23,12 +21,16 @@
     "curly": ["warn", "all"],
     "brace-style": ["warn"],
     "prefer-arrow-callback": ["warn"],
-    "max-len": ["warn", 140],
+    "max-len": ["warn", 180],
     "no-console": ["warn"], // use the provided Homebridge log method instead
     "no-non-null-assertion": ["off"],
     "comma-spacing": ["error"],
     "no-multi-spaces": ["warn", { "ignoreEOLComments": true }],
-    "lines-between-class-members": ["warn", "always", {"exceptAfterSingleLine": true}],
+    "lines-between-class-members": [
+      "warn",
+      "always",
+      { "exceptAfterSingleLine": true }
+    ],
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off"

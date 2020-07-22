@@ -252,23 +252,3 @@ export const openHDMI3 = async (config: DeviceConfig) => {
 export const openHDMI4 = async (config: DeviceConfig) => {
   await sendKey(config, KEYS.KEY_HDMI4);
 };
-
-// export const openAppleTV = async (config: DeviceConfig) => {
-//   await openApp(config, APPS['Apple TV']);
-// };
-// 
-// export const openNetflix = async (config: DeviceConfig) => {
-//   await openApp(config, APPS.Netflix);
-// };
-// 
-// export const openPrimeVideo = async (config: DeviceConfig) => {
-//   await openApp(config, APPS['Prime Video']);
-// };
-// 
-// export const openSpotify = async (config: DeviceConfig) => {
-//   await openApp(config, APPS.Spotify);
-// };
-// 
-// export const openYouTube = async (config: DeviceConfig) => {
-//   await openApp(config, APPS.YouTube);
-// };
