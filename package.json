@@ -1,7 +1,7 @@
 {
   "displayName": "SamsungTV Control",
   "name": "homebridge-samsungtv-control",
-  "version": "2.0.0-alpha.7",
+  "version": "2.0.0-alpha.8",
   "description": "Homebridge Samsung TV plugin to control Samsung TV's",
   "license": "MIT",
   "author": "mmende",

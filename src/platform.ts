@@ -44,6 +44,8 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
     this.Service = api.hap.Service;
     this.Characteristic = api.hap.Characteristic;
 
+    this.log.debug('Got config', this.config);
+
     // Add devices
     api.on(APIEvent.DID_FINISH_LAUNCHING, async () => {
       await storage.init({
@@ -113,7 +115,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       // const existingDevice = devices[usn];
       const existingDevice = existingDevices.find(d => d.usn === usn);
       if (existingDevice) {
-        this.log.debug(`Rediscovered previously seen device "${device.name}" (${device.modelName}), usn: ${device.usn}`);
+        this.log.debug(`Rediscovered previously seen device "${device.name}" (${device.modelName}), usn: "${device.usn}"`);
         devices.push({
           ...existingDevice,
           modelName: device.modelName,
@@ -133,7 +135,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       const { usn } = existingDevice;
       const device = devices.find(d => d.usn === usn);
       if (!device) {
-        this.log.debug(`Adding not discovered, previously seen device "${existingDevice.name}" (${existingDevice.modelName}), usn: ${existingDevice.usn}`);
+        this.log.debug(`Adding not discovered, previously seen device "${existingDevice.name}" (${existingDevice.modelName}), usn: "${existingDevice.usn}"`);
         devices.push(existingDevice);
       }
     }
@@ -191,10 +193,11 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       const { usn } = configDevice;
       const deviceIdx = devices.findIndex(d => d.usn === usn);
       if (deviceIdx === -1) {
+        this.log.debug(`Found config for unknown device usn: "${configDevice.usn}"`, configDevice);
         continue;
       }
       const device = devices[deviceIdx];
-      this.log.debug(`Found config for device "${device.name}" (${device.modelName}), usn: ${device.usn}`);
+      this.log.debug(`Found config for device "${device.name}" (${device.modelName}), usn: "${device.usn}"`);
       devices[deviceIdx] = {
         ...device,
         ...configDevice,
@@ -568,7 +571,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
 
     for (let i = 0; i < sources.length; ++i) {
       const { label, type } = sources[i];
-      const inputService = tvAccessory.addService(this.Service.InputSource, `input-${i}`, label);
+      const inputService = tvAccessory.addService(this.Service.InputSource, /* `input-${i}` */ label, label);
       inputService
         .setCharacteristic(this.Characteristic.Identifier, i)
         .setCharacteristic(this.Characteristic.ConfiguredName, label)
