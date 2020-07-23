@@ -1,10 +1,12 @@
 import Remote from 'node-upnp-remote';
 import UPNP from 'node-upnp';
 import { Samsung, KEYS, APPS } from 'samsung-tv-control';
+import HJSamsungTv from 'samsung-remote';
 import { PLATFORM_NAME } from '../settings';
 import parseSerialNumber from './parseSerialNumber';
 import { Logger } from 'homebridge';
 import { DeviceConfig } from '../types/deviceConfig';
+import wait from './wait';
 
 const getRemoteConfig = (config: DeviceConfig) => {
   const model = parseSerialNumber(config.modelName);
@@ -19,6 +21,26 @@ const getRemoteConfig = (config: DeviceConfig) => {
   };
 };
 
+/**
+ * Checks if the token is supposed to be used with the H/J-Series library
+ * and returns the 
+ */
+const getIdentity = (config: DeviceConfig) => {
+  const { token } = config;
+  if (!token) {
+    return null;
+  }
+  try {
+    const identity = JSON.parse(token);
+    if (identity.sessionId && identity.aesKey) {
+      return identity;
+    }
+  } catch (err) {
+    // eslint-disable
+  }
+  return null;
+};
+
 export const pair = async (config: DeviceConfig, log: Logger) => {
   const { token, modelName } = config;
   const model = parseSerialNumber(modelName);
@@ -30,7 +52,7 @@ export const pair = async (config: DeviceConfig, log: Logger) => {
   }
   const { yearKey } = model || {};
   if (yearKey === 'J' || yearKey === 'H') {
-    log.debug(`${config.name} - This TV seems to be a ${yearKey}-Series which probably won't work with this plugin.`);
+    log.debug(`${config.name} - This TV seems to be a ${yearKey}-Series. Please run "npx samsungtv-ctrl pair ${config.lastKnownIp}" to get the pairing data for the config.`);
   }
   if (token) {
     return token;
@@ -50,6 +72,21 @@ const isAvailable = async (config: DeviceConfig) => {
 };
 
 const sendKey = async (config: DeviceConfig, key: KEYS) => {
+  // Use H/J-Series lib when the token is an identity
+  const identity = getIdentity(config);
+  if (identity) {
+    const tv = new HJSamsungTv({
+      ip: config.lastKnownIp,
+      appId: '721b6fce-4ee6-48ba-8045-955a539edadb',
+      userId: '654321',
+    });
+    await tv.init(identity);
+    const connection = await tv.connect();
+    await tv.sendKey(key);
+    await connection.close();
+    return;
+  }
+  // Otherwise use samsung-tv-control
   const cfg = getRemoteConfig(config);
   const control = new Samsung(cfg);
   await control.sendKeyPromise(key);
@@ -57,16 +94,31 @@ const sendKey = async (config: DeviceConfig, key: KEYS) => {
 };
 
 export const sendKeys = async (config: DeviceConfig, keys: Array<KEYS>) => {
+  // Use H/J-Series lib when the token is an identity
+  const identity = getIdentity(config);
+  if (identity) {
+    const tv = new HJSamsungTv({
+      ip: config.lastKnownIp,
+      appId: '721b6fce-4ee6-48ba-8045-955a539edadb',
+      userId: '654321',
+    });
+    await tv.init(identity);
+    const connection = await tv.connect();
+    for (let i = 0; i < keys.length; ++i) {
+      const key = keys[i];
+      await tv.sendKey(key);
+      await wait(config.delay);
+    }
+    await connection.close();
+    return;
+  }
+  // Otherwise use samsung-tv-control
   const cfg = getRemoteConfig(config);
   const control = new Samsung(cfg);
   for (let i = 0; i < keys.length; ++i) {
     const key = keys[i];
     await control.sendKeyPromise(key);
-    await new Promise(resolve => {
-      setTimeout(() => {
-        resolve();
-      }, config.delay);
-    });
+    await wait(config.delay);
   }
   control.closeConnection();
 };

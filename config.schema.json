@@ -24,7 +24,7 @@
               "required": true
             },
             "token": {
-              "title": "Pairing token",
+              "title": "Pairing token / identity",
               "description": "Some devices require pairing them before the plugin can control them. In this case look in the log for the pairing token for this device and add it to your config.",
               "type": "string"
             },

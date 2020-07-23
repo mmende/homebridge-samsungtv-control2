@@ -14,7 +14,8 @@
   },
   "files": [
     "dist/*",
-    "config.schema.json"
+    "config.schema.json",
+    "cli.js"
   ],
   "engines": {
     "node": ">=10.17.0",
@@ -35,11 +36,14 @@
     "upnp"
   ],
   "dependencies": {
+    "chalk": "^4.1.0",
+    "commander": "^6.0.0",
     "lodash.flatten": "^4.4.0",
     "macfromip": "^1.1.1",
     "node-persist": "^3.1.0",
     "node-upnp": "^1.2.0",
     "node-upnp-remote": "^1.2.0",
+    "samsung-remote": "git+https://github.com/mmende/samsung-remote-models-2014-and-newer.git",
     "samsung-tv-control": "^1.10.0",
     "ssdp-ts": "^3.2.6"
   },
@@ -54,5 +58,8 @@
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.6"
+  },
+  "bin": {
+    "samsungtv-ctrl": "./cli.js"
   }
 }

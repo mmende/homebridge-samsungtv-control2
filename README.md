@@ -4,7 +4,7 @@ This plugin adds SamsungTVs available in your local network to homebridge. Just 
 
 # Customize devices
 
-After you started homebridge you should see the device names with their usn in the log. To customize a device, add an object with the usn and any option you want to modify to the devices list under the `SamsungTVControl` platform. You could e.g. change the initial name like so:
+After you started homebridge you should see the device names with their usn in the log. To customize a device, add an object with the usn (including `uuid:`) and any option you want to modify to the devices list under the `SamsungTVControl` platform. You could e.g. change the initial name like so:
 
 ```json
 {
