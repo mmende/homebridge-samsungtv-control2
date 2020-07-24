@@ -172,7 +172,9 @@ export const setActive = async (config: DeviceConfig, active: boolean) => {
   if (active) {
     await turnOn(config)
   } else {
-    sendKey(config, KEYS.KEY_POWEROFF)
+    const identity = getIdentity(config)
+    const key = identity ? KEYS.KEY_POWER : KEYS.KEY_POWEROFF
+    sendKey(config, key)
   }
 }
 
