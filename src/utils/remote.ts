@@ -2,7 +2,7 @@ import Remote from 'node-upnp-remote'
 import UPNP from 'node-upnp'
 import { Samsung, KEYS, APPS } from 'samsung-tv-control'
 import HJSamsungTv from 'samsung-remote'
-import { PLATFORM_NAME } from '../settings'
+import { PLATFORM_NAME, PLUGIN_NAME } from '../settings'
 import parseSerialNumber from './parseSerialNumber'
 import { Logger } from 'homebridge'
 import { DeviceConfig } from '../types/deviceConfig'
@@ -54,7 +54,7 @@ export const getPairing = async (config: DeviceConfig, log: Logger) => {
   if (supportsLegacy) {
     log.debug(
       `${config.name} - This TV probably won't need to be paired since it is from ${year} and should support the legacy protocol.` +
-        chalk`If you can't control it you still can try pairing it however with {blue npx samsungtv-ctrl pair2 ${config.lastKnownIp} ${config.mac}}`,
+        chalk`If you can't control it you still can try pairing it however with {blue npx ${PLUGIN_NAME} pair2 ${config.lastKnownIp} ${config.mac}}`,
     )
     return null
   }
@@ -62,12 +62,12 @@ export const getPairing = async (config: DeviceConfig, log: Logger) => {
   if (yearKey === `J` || yearKey === `H`) {
     log.info(
       `${config.name} - This TV seems to be a ${yearKey}-Series.` +
-        chalk`Please run {blue npx samsungtv-ctrl pair1 ${config.lastKnownIp} ${config.mac}} to get a pairing token.`,
+        chalk`Please run {blue npx ${PLUGIN_NAME} pair1 ${config.lastKnownIp} ${config.mac}} to get a pairing token.`,
     )
   } else {
     log.info(
-      chalk`${config.name} - Please run {blue npx samsungtv-ctrl pair2 ${config.lastKnownIp} ${config.mac}} or` +
-        chalk`{blue npx samsungtv-ctrl pair1 ${config.lastKnownIp} ${config.mac}} to get a pairing token.`,
+      chalk`${config.name} - Please run {blue npx ${PLUGIN_NAME} pair2 ${config.lastKnownIp} ${config.mac}} or` +
+        chalk`{blue npx ${PLUGIN_NAME} pair1 ${config.lastKnownIp} ${config.mac}} to get a pairing token.`,
     )
   }
   return null

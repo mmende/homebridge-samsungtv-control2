@@ -62,6 +62,7 @@
     "typescript": "^3.9.6"
   },
   "bin": {
-    "samsungtv-ctrl": "./cli.js"
+    "samsungtv-ctrl": "./cli.js",
+    "homebridge-samsungtv-control": "./cli.js"
   }
 }

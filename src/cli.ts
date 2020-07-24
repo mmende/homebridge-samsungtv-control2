@@ -5,7 +5,7 @@ import HJSamsungTv from 'samsung-remote'
 import SamsungTv, { KEYS } from 'samsung-tv-control'
 import readline from 'readline'
 import parseSerialNumber from './utils/parseSerialNumber'
-import { PLATFORM_NAME } from './settings'
+import { PLATFORM_NAME, PLUGIN_NAME } from './settings'
 import { encodeIdentity } from './utils/identity'
 
 const modelInfo = (model) => {
@@ -19,8 +19,15 @@ const pinPair = async (ip: string, mac: string) => {
     userId: `654321`,
   }
   const tv = new HJSamsungTv(deviceConfig)
-  await tv.init()
-  await tv.requestPin()
+  try {
+    await tv.init()
+    await tv.requestPin()
+  } catch (err) {
+    console.log(
+      `That didn't work unfortunatelly. Please try the second method:` +
+        chalk`{green npx ${PLUGIN_NAME} pair1 ${ip} ${mac}}`,
+    )
+  }
 
   const rl = readline.createInterface({
     input: process.stdin,
@@ -36,15 +43,16 @@ const pinPair = async (ip: string, mac: string) => {
       identity = await tv.confirmPin(pin)
       await tv.connect()
     } catch (err) {
-      console.log(`That didn't work`, err)
       console.log(
-        `That didn't work unfortunatelly. Here are some other possible solutions:`,
+        chalk.red(
+          `That didn't work unfortunatelly. Here are some other possible solutions:`,
+        ),
       )
       console.log(
-        chalk`\t1. Try again... {green npx samsung-ctrl pair1 ${ip} ${mac}}`,
+        chalk`\t1. Try again... {green npx ${PLUGIN_NAME} pair1 ${ip} ${mac}}`,
       )
       console.log(
-        chalk`\t2. Try the other pairing method {green npx samsung-ctrl pair2 ${ip} ${mac}}`,
+        chalk`\t2. Try the other pairing method {green npx ${PLUGIN_NAME} pair2 ${ip} ${mac}}`,
       )
       rl.close()
       process.exit(1)
@@ -74,21 +82,39 @@ const tokenPair = async (
     name: PLATFORM_NAME,
     port: parseInt(port, 10),
   }
+  const altPort = port === `8002` ? `8001` : `8002`
   const tv = new SamsungTv(config)
   console.log(
     `Ok... sending the pairing request to your tv. Please click allow when asked`,
   )
-  const token = await tv.getTokenPromise()
+  let token: string | null = null
+  try {
+    token = await tv.getTokenPromise()
+  } catch (err) {
+    console.log(
+      chalk.red(
+        `That didn't work unfortunatelly. Here are some other possible solutions:`,
+      ),
+    )
+    console.log(
+      chalk`\t1. Try another port {green npx ${PLUGIN_NAME} pair2 ${ip} ${mac} --port ${altPort}}`,
+    )
+    console.log(
+      chalk`\t2. Try the other pairing method {green npx ${PLUGIN_NAME} pair1 ${ip} ${mac}}`,
+    )
+    process.exit(1)
+  }
   if (!token) {
-    const altPort = port === `8002` ? `8001` : `8002`
     console.log(
-      `Didn't receive a token unfortunatelly. Here are some other possible solutions:`,
+      chalk.red(
+        `Didn't receive a token unfortunatelly. Here are some other possible solutions:`,
+      ),
     )
     console.log(
-      chalk`\t1. Try another port {green npx samsung-ctrl pair2 ${ip} ${mac} --port ${altPort}}`,
+      chalk`\t1. Try another port {green npx ${PLUGIN_NAME} pair2 ${ip} ${mac} --port ${altPort}}`,
     )
     console.log(
-      chalk`\t2. Try the other pairing method {green npx samsung-ctrl pair1 ${ip} ${mac}}`,
+      chalk`\t2. Try the other pairing method {green npx ${PLUGIN_NAME} pair1 ${ip} ${mac}}`,
     )
     process.exit(1)
   }
