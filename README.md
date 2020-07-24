@@ -82,7 +82,7 @@ Here is an example:
 }
 ```
 
-* [List of apps](https://github.com/Toxblh/samsung-tv-control/blob/HEAD/src/apps.ts) - The support for opening apps is unclear. These however won't work when paired with `pair1` definitely.
-* [List of keys](https://github.com/Toxblh/samsung-tv-control/blob/master/src/keys.ts) - You just have to test which keys work on your tv and which don't since this differs stronlgy between all the models. Casing doesn't matter and you can also leave away `KEY_` for convenience as seen in the example. If you need to send a key multiple times in row you can add e.g. `*3` to send it three times.
+- [List of apps](https://github.com/Toxblh/samsung-tv-control/blob/HEAD/src/apps.ts) - The support for opening apps is unclear. These however won't work when paired with `pair1` definitely.
+- [List of keys](https://github.com/Toxblh/samsung-tv-control/blob/master/src/keys.ts) - You just have to test which keys work on your tv and which don't since this differs strongly between all the models. Casing doesn't matter and you can also leave away `KEY_` for convenience as seen in the example. If you need to send a key multiple times in row you can add e.g. `*3` to send it three times.
 
 **Note: Unfortunatelly when editing inputs it might be required to remove the tv from homekit and add it again after homebridge restarted for the home app to see the changes.**
