@@ -20,7 +20,7 @@ After you started homebridge you should see the device names with their usn in t
 
 # Pairing
 
-Younger TV's (after 2013) might require being paired before the plugin is able to remote control them. The plugin therefore initiates the pairing after the initial device discovery and remembers tokens temporarily. However you should add the token in your config so that you don't need to pair again everytime homebridge restarts like this:
+Younger TV's (2014+) might require being paired before the plugin is able to remote control them. The plugin comes with a command line utility that among other things can run the pairing procecure and give you a token you then add to the configuration. If pairing is required and you didn't add the token to your configuration yet, the plugin should log the two methods you can try to pair your TV. When `samsung-ctrl` finished pairing it tries to send the mute key to your tv for you to be able to check if it worked. If you didn't observe mute being toggled on your TV you might try the second method.
 
 ```json
 {
@@ -28,14 +28,12 @@ Younger TV's (after 2013) might require being paired before the plugin is able t
   "devices": [
     {
       "usn": "uuid:a7001fbe-c776-11ea-87d0-0242ac130003",
-      "token": "SEE_TOKEN_IN_HOMEBRIDGE_LOG",
+      "token": "eyJzZXNzaW9uSWQiOjQyLCJhZXNLZXkiOiJZb3UgcmVhbGx5IGRlY29kZWQgdGhpcz8g8J+YiSJ9",
       "name": "Bedroom TV"
     }
   ]
 }
 ```
-
-**Note: Samsung TV's from the J/H-Series use a yet unsupported pairing approach. Therefore by now this plugin probably won't work with these TV's sadly.**
 
 # Add TV's to home app
 
@@ -53,7 +51,7 @@ Some Samsung TV's (actually all I was able to test) turn off their network card 
 
 # Custom inputs
 
-By default only TV will be added as input source which triggers sending the TV key to e.g. get back to the tuner when hdmi was previously selected. The `inputs` property allows you to add extra inputs to e.g. switch channels, start sleep mode or open an app (if supported). Each input requires a `name` which represents the input name and a `keys` property which is either a string containing numbers only, a comma seperated list of keys or a single app name from [this list](https://github.com/Toxblh/samsung-tv-control/blob/HEAD/src/apps.ts). The keys will then be send to the tv with a delay of `500ms` (or what you configured) in between.
+By default only TV will be added as input source which triggers sending the TV key to e.g. get back to the tuner when hdmi was previously selected. The `inputs` property allows you to add extra inputs to e.g. switch channels, start sleep mode or open an app (if supported). Each input requires a `name` which represents the input name and a `keys` property which is either a string containing numbers only, a comma seperated list of keys or a single app name from the list below. The keys will then be send to the tv with a delay of `500ms` (or what you configured) in between.
 
 Here is an example:
 
@@ -84,6 +82,7 @@ Here is an example:
 }
 ```
 
-**Note: You can find a list of all supported keys [here](https://github.com/Toxblh/samsung-tv-control/blob/master/src/keys.ts). Casing doesn't matter and you can also leave away `KEY_` for convenience as seen in the example. If you need to send a key multiple times in a row you can add e.g. `*3` to send it three times.**
+* [List of apps](https://github.com/Toxblh/samsung-tv-control/blob/HEAD/src/apps.ts) - The support for opening apps is unclear. These however won't work when paired with `pair1` definitely.
+* [List of keys](https://github.com/Toxblh/samsung-tv-control/blob/master/src/keys.ts) - You just have to test which keys work on your tv and which don't since this differs stronlgy between all the models. Casing doesn't matter and you can also leave away `KEY_` for convenience as seen in the example. If you need to send a key multiple times in row you can add e.g. `*3` to send it three times.
 
-You have to test yourself which keys work and which not since this differs stronlgy between all the models. Unfortunatelly when editing inputs it might be required to remove the tv from homekit and add it again after homebridge restarted for the home app to see the changes.
+**Note: Unfortunatelly when editing inputs it might be required to remove the tv from homekit and add it again after homebridge restarted for the home app to see the changes.**

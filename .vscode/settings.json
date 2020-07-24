@@ -6,5 +6,6 @@
   "editor.rulers": [180],
   "eslint.enable": true,
   "deno.enable": false,
-  "eslint.packageManager": "npm"
+  "eslint.packageManager": "npm",
+  "prettier.configPath": ".prettierrc.yml"
 }

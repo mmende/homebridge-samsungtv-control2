@@ -43,7 +43,7 @@
     "node-persist": "^3.1.0",
     "node-upnp": "^1.2.0",
     "node-upnp-remote": "^1.2.0",
-    "samsung-remote": "git+https://github.com/mmende/samsung-remote-models-2014-and-newer.git",
+    "samsung-remote": "git+https://github.com/mmende/samsung-remote-models-2014-and-newer.git#v1.1.0",
     "samsung-tv-control": "^1.10.0",
     "ssdp-ts": "^3.2.6"
   },
@@ -53,8 +53,10 @@
     "@typescript-eslint/eslint-plugin": "^3.6.1",
     "@typescript-eslint/parser": "^3.6.1",
     "eslint": "^7.4.0",
+    "eslint-config-prettier": "^6.11.0",
     "homebridge": "^1.1.1",
     "nodemon": "^2.0.4",
+    "prettier": "^2.0.5",
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.6"

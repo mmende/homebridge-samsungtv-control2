@@ -3,7 +3,8 @@
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
-    "plugin:@typescript-eslint/recommended" // uses the recommended rules from the @typescript-eslint/eslint-plugin
+    "plugin:@typescript-eslint/recommended", // uses the recommended rules from the @typescript-eslint/eslint-plugin,
+    "prettier"
   ],
   "parserOptions": {
     "ecmaVersion": 2018,
@@ -11,10 +12,10 @@
   },
   "ignorePatterns": ["dist"],
   "rules": {
-    "quotes": ["warn", "single"],
+    "quotes": ["warn", "backtick"],
     "indent": ["warn", 2, { "SwitchCase": 1 }],
     "linebreak-style": ["warn", "unix"],
-    "semi": ["warn", "always"],
+    "semi": ["warn", "never"],
     "comma-dangle": ["warn", "always-multiline"],
     "dot-notation": "off",
     "eqeqeq": "warn",
