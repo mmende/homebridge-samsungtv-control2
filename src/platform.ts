@@ -16,6 +16,7 @@ import { KEYS, APPS } from 'samsung-tv-control'
 import flatten from 'lodash.flatten'
 import storage from 'node-persist'
 import chalk from 'chalk'
+import path from 'path'
 
 const DEVICES_KEY = `${PLATFORM_NAME}_devices`
 
@@ -47,7 +48,10 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
 
     // Add devices
     api.on(APIEvent.DID_FINISH_LAUNCHING, async () => {
+      const dir = path.join(api.user.storagePath(), PLUGIN_NAME)
+      this.log.debug(`Using node-persist path:`, dir)
       await storage.init({
+        dir,
         logging: (...args) => this.log.debug(`${PLATFORM_NAME} db -`, ...args),
       })
 
