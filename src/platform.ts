@@ -591,13 +591,6 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       .on(`set`, async (newValue, callback) => {
         // Clear old timeout if not cleared already
         clearTimeout(resetActiveIdentifierTimer)
-        // Switch back to "TV" input source after 3 seconds
-        resetActiveIdentifierTimer = setTimeout(() => {
-          tvService.updateCharacteristic(
-            this.Characteristic.ActiveIdentifier,
-            0,
-          )
-        }, 3000)
 
         // the value will be the value you set for the Identifier Characteristic
         // on the Input Source service that was selected - see input sources below.
@@ -617,6 +610,13 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
           callback(err)
           return
         }
+        // Switch back to "TV" input source after 3 seconds
+        resetActiveIdentifierTimer = setTimeout(() => {
+          tvService.updateCharacteristic(
+            this.Characteristic.ActiveIdentifier,
+            0,
+          )
+        }, 3000)
         callback(null)
       })
 
