@@ -121,15 +121,15 @@ export default async (): Promise<Array<SamsungTV>> => {
       if (statusCode !== 200) {
         return
       }
-      if (checkedDevices.indexOf(headers.USN) > -1) {
+      if (checkedDevices.indexOf(filterUSN(headers.USN)) > -1) {
         return
       }
-      checkedDevices.push(headers.USN)
+      checkedDevices.push(filterUSN(headers.USN))
       deviceChecks.push(checkDeviceDetails(headers, rinfo))
     },
   )
-  // client.search(`urn:schemas-upnp-org:service:RenderingControl:1`)
   client.search(`urn:schemas-upnp-org:device:MediaRenderer:1`)
+  client.search(`urn:schemas-upnp-org:service:RenderingControl:1`)
 
   // Scan for scanDuration ms
   await new Promise((res) => {
