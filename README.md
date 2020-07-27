@@ -1,6 +1,6 @@
 # Homebridge-SamsungTV-Control
 
-This plugin adds SamsungTVs available in your local network to homebridge. Just install the plugin in the Homebridge UI in the Plugin tab, turn on all your Samsung TV's so they can be discovered and restart homebridge.
+This plugin adds Samsung TV's available in your local network to homebridge. Just install the plugin in the Homebridge UI in the Plugin tab, turn on all your Samsung TV's so they can be discovered and restart homebridge. Also if you update the plugin it is recommended to start your TV's before restarting homebridge since there might be some internal changes that need to be updated.
 
 # Customize devices
 
