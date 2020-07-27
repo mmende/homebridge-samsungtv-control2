@@ -3,6 +3,9 @@ import UPNP from 'node-upnp'
 import parseSN, { SamsungTVModel } from './parseSerialNumber'
 import getMacAddress from './getMacAddress'
 import filterUSN from './filterUSN'
+import { Logger } from 'homebridge'
+import chalk from 'chalk'
+import { SamsungPlatformConfig } from '../types/deviceConfig'
 
 interface Headers {
   USN: string
@@ -42,15 +45,19 @@ export interface SamsungTV {
   capabilities: Array<UPNPCapability>
 }
 
-const checkDeviceDetails = async (headers: Headers, rinfo: RemoteInfo) => {
+const checkDeviceDetails = async (
+  headers: Headers,
+  rinfo: RemoteInfo,
+  log?: Logger,
+  config?: SamsungPlatformConfig,
+) => {
+  const deviceCustomizations =
+    config && Array.isArray(config.devices) ? config.devices : []
+  const usn = filterUSN(headers.USN)
   const upnp = new UPNP({ url: headers.LOCATION })
   const deviceDescription = (await upnp.getDeviceDescription()) as CheckedUpnpDevice
-  const {
-    manufacturer,
-    friendlyName,
-    modelName,
-    services = {},
-  } = deviceDescription
+  const { manufacturer, friendlyName, services = {} } = deviceDescription
+  let { modelName } = deviceDescription
   if (
     typeof manufacturer !== `string` ||
     manufacturer.indexOf(`Samsung Electronics`) < 0
@@ -58,21 +65,45 @@ const checkDeviceDetails = async (headers: Headers, rinfo: RemoteInfo) => {
     return null
   }
   if (typeof modelName !== `string` || !modelName.length) {
-    return null
+    // Check if the modelName was configured manually
+    const configuredDevice = deviceCustomizations.find((d) => d.usn === usn)
+    if (configuredDevice && configuredDevice.modelName) {
+      modelName = configuredDevice.modelName
+    } else {
+      // eslint-disable-next-line
+      const logFn = log ? log.info : console.log
+      logFn(
+        chalk`Found a Samsung device ({blue ${friendlyName}}) that doesn't expose a correct model name. ` +
+          chalk`If this is a Samsung TV add this device to your config with usn: "{green ${usn}}" and the correct model name (e.g. UN40C5000)`,
+      )
+      return null
+    }
   }
   const model = parseSN(modelName)
   if (!model) {
+    // eslint-disable-next-line
+    const logFn = log ? log.debug : console.log
+    logFn(
+      chalk`Found unparsable model name ({red ${modelName}}) for device {blue ${friendlyName}}, usn: "{green ${usn}}". Skipping it.`,
+    )
     return null
   }
   let mac = `00:00:00:00:00:00`
   try {
     mac = await getMacAddress(rinfo.address)
   } catch (err) {
-    return null
-    // eslint-disable-next-line
-    // console.warn(
-    //   `Could not get mac address for "${friendlyName}". Please replace "${mac}" with the actual mac address in your config.`,
-    // )
+    const configuredDevice = deviceCustomizations.find((d) => d.usn === usn)
+    if (configuredDevice && configuredDevice.mac) {
+      mac = configuredDevice.mac
+    } else {
+      // eslint-disable-next-line
+      const logFn = log ? log.debug : console.log
+      logFn(
+        chalk`Could not determine mac address for {blue ${friendlyName}} (${modelName}), usn: "{green ${usn}}". Skipping it. ` +
+          chalk`Please add the mac address manually to your config if you want to use this TV.`,
+      )
+      return null
+    }
   }
 
   /**
@@ -92,8 +123,6 @@ const checkDeviceDetails = async (headers: Headers, rinfo: RemoteInfo) => {
     capabilities = Object.keys(serviceDescription.actions)
   }
 
-  const usn = filterUSN(headers.USN)
-
   const tv: SamsungTV = {
     friendlyName,
     modelName,
@@ -107,7 +136,10 @@ const checkDeviceDetails = async (headers: Headers, rinfo: RemoteInfo) => {
   return tv
 }
 
-export default async (): Promise<Array<SamsungTV>> => {
+export default async (
+  log?: Logger,
+  config?: SamsungPlatformConfig,
+): Promise<Array<SamsungTV>> => {
   const checkedDevices: Array<string> = []
   const client = new Client({
     ssdpSig: `USER-AGENT: Homebridge/42.0.0 UPnP/1.1 hbTV/8.21.0`,
@@ -125,7 +157,7 @@ export default async (): Promise<Array<SamsungTV>> => {
         return
       }
       checkedDevices.push(filterUSN(headers.USN))
-      deviceChecks.push(checkDeviceDetails(headers, rinfo))
+      deviceChecks.push(checkDeviceDetails(headers, rinfo, log, config))
     },
   )
   client.search(`urn:schemas-upnp-org:device:MediaRenderer:1`)

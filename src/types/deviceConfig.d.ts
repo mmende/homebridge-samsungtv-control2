@@ -1,4 +1,4 @@
-import { PLATFORM_NAME } from '../settings';
+import { PLATFORM_NAME } from '../settings'
 
 export interface DeviceConfig {
   name: string
@@ -12,7 +12,7 @@ export interface DeviceConfig {
   remoteControlPort?: number
   token?: string
   inputs?: Array<{
-    name: string,
+    name: string
     keys: string
   }>
   disableUpnpSetters?: boolean
