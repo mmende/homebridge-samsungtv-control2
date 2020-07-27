@@ -7,9 +7,30 @@ import readline from 'readline'
 import parseSerialNumber from './utils/parseSerialNumber'
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings'
 import { encodeIdentity } from './utils/identity'
+import detectDevices from './utils/detectDevices'
 
 const modelInfo = (model) => {
-  console.log(parseSerialNumber(model)) // eslint-disable-line
+  console.log(parseSerialNumber(model))
+}
+
+const discover = async () => {
+  console.log(chalk.yellow(`Searching for devices...`))
+  const devices = await detectDevices()
+  if (!devices.length) {
+    console.log(
+      chalk.red(
+        `😞 No Samsung TV found. Remember to turn on your Samsung TV's and check if they are connected to the same network before starting the discovery.`,
+      ),
+    )
+  } else {
+    console.log(`Found these devices:`)
+    for (let i = 0; i < devices.length; ++i) {
+      const device = devices[i]
+      console.log(
+        chalk`{blue ${device.friendlyName}} (${device.modelName}): usn "{green ${device.usn}}"`,
+      )
+    }
+  }
 }
 
 const pinPair = async (ip: string, mac: string) => {
@@ -134,6 +155,13 @@ program
   .command(`model <model>`)
   .description(`Shows infos about a specific model (e.g. UE40D6100)`)
   .action(modelInfo)
+
+program
+  .command(`discover`)
+  .description(
+    `Starts a manual device discovery. Note: Found devices will not be added to homebridge. This is just for testing purposes.`,
+  )
+  .action(discover)
 
 program
   .command(`pair1 <ip> <mac>`)
