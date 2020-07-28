@@ -124,7 +124,7 @@ const logTokenAlternatives = ({
 const tokenPair = async (
   ip: string,
   mac: string,
-  { port }: { port: string },
+  { port, legacy }: { port: string; legacy: boolean },
 ) => {
   const config = {
     ip,
@@ -133,8 +133,10 @@ const tokenPair = async (
     port: parseInt(port, 10),
   }
   const tv = new SamsungTv(config)
-  if (port === `55000`) {
-    console.log(`55000 is the legacy port that doesn't require pairing.\n`)
+  if (port === `55000` || legacy) {
+    if (port === `55000` && !legacy) {
+      console.log(`55000 is the legacy port that doesn't require pairing.\n`)
+    }
     console.log(
       `Sending the mute key to see if your device is controlable with the legacy protocol.`,
     )
@@ -229,6 +231,10 @@ program
     `-p, --port <port>`,
     `Remote control port for method 1. You might try 8001 as well here.`,
     `8002`,
+  )
+  .option(
+    `-l, --legacy`,
+    `If set, the script won't try to pair and just sends the mute key.`,
   )
   .action(tokenPair)
 
