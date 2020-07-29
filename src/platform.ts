@@ -318,30 +318,40 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       tvService.updateCharacteristic(this.Characteristic.Active, newState)
     }, 1000 * 15)
 
-    tvService
-      .getCharacteristic(this.Characteristic.Brightness)
-      .on(`get`, async (callback) => {
-        this.log.debug(`${tvName} - GET Brightness`)
-        try {
-          const brightness = await remote.getBrightness(this.getDevice(usn))
-          callback(null, brightness)
-        } catch (err) {
-          callback(err)
-        }
-      })
-      .on(`set`, async (newValue, callback) => {
-        this.log.debug(`${tvName} - SET Brightness => setNewValue: ${newValue}`)
-        try {
-          await remote.setBrightness(this.getDevice(usn), newValue)
-          tvService.updateCharacteristic(
-            this.Characteristic.Brightness,
-            newValue,
+    const canGetBrightness = hasCapability(device, `GetBrightness`)
+    const canSetBrightness = hasCapability(device, `SetBrightness`)
+    if (canGetBrightness) {
+      tvService
+        .getCharacteristic(this.Characteristic.Brightness)
+        .on(`get`, async (callback) => {
+          this.log.debug(`${tvName} - GET Brightness`)
+          try {
+            const brightness = await remote.getBrightness(this.getDevice(usn))
+            callback(null, brightness)
+          } catch (err) {
+            callback(err)
+          }
+        })
+    }
+    if (canSetBrightness) {
+      tvService
+        .getCharacteristic(this.Characteristic.Brightness)
+        .on(`set`, async (newValue, callback) => {
+          this.log.debug(
+            `${tvName} - SET Brightness => setNewValue: ${newValue}`,
           )
-          callback(null)
-        } catch (err) {
-          callback(err)
-        }
-      })
+          try {
+            await remote.setBrightness(this.getDevice(usn), newValue)
+            tvService.updateCharacteristic(
+              this.Characteristic.Brightness,
+              newValue,
+            )
+            callback(null)
+          } catch (err) {
+            callback(err)
+          }
+        })
+    }
 
     // handle remote control input
     tvService
@@ -424,31 +434,9 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
     /**
      * Create a speaker service to allow volume control
      */
-    // const speakerService = new this.Service.TelevisionSpeaker(
-    //   `${tvName} Volume`,
-    //   `tvSpeakerService`,
-    // )
     const speakerService = tvAccessory.addService(
       this.Service.TelevisionSpeaker,
     )
-
-    // test if this is required for volume to show up in home
-    // tvService
-    //   .getCharacteristic(this.Characteristic.CurrentMediaState)
-    //   .on(`get`, (callback) => {
-    //     this.log.debug(`${tvName} - get CurrentMediaState`)
-    //     callback(null, this.Characteristic.CurrentMediaState.PLAY)
-    //   })
-    // tvService
-    //   .getCharacteristic(this.Characteristic.TargetMediaState)
-    //   .on(`get`, (callback) => {
-    //     this.log.debug(`${tvName} - get TargetMediaState`)
-    //     callback(null, this.Characteristic.TargetMediaState.PLAY)
-    //   })
-    //   .on(`set`, (callback) => {
-    //     this.log.debug(`${tvName} - set TargetMediaState`)
-    //     callback(null)
-    //   })
 
     /**
      * We have these scenarios
@@ -544,10 +532,17 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         }
       })
 
+    const canGetMute = hasCapability(device, `GetMute`)
     speakerService
       .getCharacteristic(this.Characteristic.Mute)
       .on(`get`, async (callback) => {
         this.log.debug(`${tvName} - GET Mute`)
+        // When mute cannot be fetched always pretend not to be muted
+        // for now...
+        if (!canGetMute) {
+          callback(null, false)
+          return
+        }
         try {
           const muted = await remote.getMute(this.getDevice(usn))
           callback(null, muted)

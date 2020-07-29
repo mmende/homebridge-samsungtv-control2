@@ -9,6 +9,7 @@ import { DeviceConfig } from '../types/deviceConfig'
 import wait from './wait'
 import { decodeIdentity } from './identity'
 import chalk from 'chalk'
+import hasCapability from './hasCapability'
 
 const getRemoteConfig = (config: DeviceConfig) => {
   const model = parseSerialNumber(config.modelName)
@@ -144,12 +145,12 @@ const turnOn = async (config: DeviceConfig) => {
   control.closeConnection()
 }
 
-export const getDeviceInfo = async (config: DeviceConfig) => {
-  const { lastKnownLocation: url } = config
-  const upnp = new UPNP({ url })
-  const info = await upnp.getDeviceDescription()
-  return info
-}
+// export const getDeviceInfo = async (config: DeviceConfig) => {
+//   const { lastKnownLocation: url } = config
+//   const upnp = new UPNP({ url })
+//   const info = await upnp.getDeviceDescription()
+//   return info
+// }
 
 export const getActive = async (config: DeviceConfig) => {
   const cfg = getRemoteConfig(config)
@@ -187,7 +188,7 @@ export const getVolume = async (config: DeviceConfig) => {
 
 export const setVolume = async (config: DeviceConfig, volume: number) => {
   const { lastKnownLocation: url, disableUpnpSetters } = config
-  if (!disableUpnpSetters) {
+  if (!disableUpnpSetters && hasCapability(config, `SetVolume`)) {
     const remote = new Remote({ url })
     await remote.setVolume(volume)
     return
@@ -224,16 +225,19 @@ export const getMute = async (config: DeviceConfig) => {
 
 export const setMute = async (config: DeviceConfig, mute: boolean) => {
   const { lastKnownLocation: url, disableUpnpSetters } = config
-  if (!disableUpnpSetters) {
+  if (!disableUpnpSetters && hasCapability(config, `SetMute`)) {
     const remote = new Remote({ url })
     await remote.setMute(mute)
     return
   }
-  const isMuted = await getMute(config)
-  // Only toggle mute state when the desired state differs
-  // from the current state
-  if ((isMuted && mute) || (!isMuted && !mute)) {
-    return
+
+  if (hasCapability(config, `GetMute`)) {
+    // Only toggle mute state when the desired state differs
+    // from the current state
+    const isMuted = await getMute(config)
+    if ((isMuted && mute) || (!isMuted && !mute)) {
+      return
+    }
   }
   await sendKey(config, KEYS.KEY_MUTE)
 }
