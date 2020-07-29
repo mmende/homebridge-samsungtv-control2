@@ -2,9 +2,13 @@
 
 This plugin adds Samsung TV's available in your local network to homebridge. Just install the plugin in the Homebridge UI in the Plugin tab, turn on all your Samsung TV's so they can be discovered and restart homebridge. Also if you update the plugin it is recommended to start your TV's before restarting homebridge since there might be some internal changes that need to be updated.
 
+<img src="assets/Home.png?raw=true" width="250" /> 
+<img src="assets/HomeTVOpen.png?raw=true" width="250" /> 
+<img src="assets/Remote.png?raw=true" width="250" />
+
 # Customize devices
 
-After you started homebridge you should see the device names with their usn in the log. To customize a device, add an object with the usn (including `uuid:`) and any option you want to modify to the devices list under the `SamsungTVControl` platform. You could e.g. change the initial name like so:
+After you started homebridge you should see the device names with their usn in the homebridge log. To customize a device, add an object with the usn (including `uuid:`) and any option you want to modify to the devices list under the `SamsungTVControl` platform. You could e.g. change the initial name like so:
 
 ```json
 {
@@ -20,17 +24,20 @@ After you started homebridge you should see the device names with their usn in t
 
 # Pairing
 
-Younger TV's (2014+) might require being paired before the plugin is able to remote control them. The plugin comes with a command line utility that among other things can run the pairing procecure and give you a token you then add to the configuration. If pairing is required and you didn't add the token to your configuration yet, have a look at the homebridge logs to see the possible commands to pair your tv. The two possible commands look like this
+Younger TV's (2014+) might require being paired before the plugin is able to remote control them. The plugin comes with a command line utility that among other things can run the pairing procecure and give you a token you then add to the configuration. If pairing is required and you didn't add the token to your configuration yet, have a look at the homebridge logs to see the possible commands to pair your tv. The pairing commands look like this
 
-- `npx homebridge-samsungtv-control pair1 <ip> <mac>` e.g. `npx homebridge-samsungtv-control pair1 123.123.123.123 21:2F:B7:1F:DF:F0`
-- `npx homebridge-samsungtv-control pair2 <ip> <mac>` e.g. `npx homebridge-samsungtv-control pair2 123.123.123.123 21:2F:B7:1F:DF:F0`
+- `npx homebridge-samsungtv-control pair1 <ip> <mac>`  
+  e.g. `npx homebridge-samsungtv-control pair1 123.123.123.123 21:2F:B7:1F:DF:F0`
+- `npx homebridge-samsungtv-control pair2 <ip> <mac>`  
+  e.g. `npx homebridge-samsungtv-control pair2 123.123.123.123 21:2F:B7:1F:DF:F0`
 
 For pair2 you can also try port 8001 like `npx homebridge-samsungtv-control pair2 123.123.123.123 21:2F:B7:1F:DF:F0 --port 8001`.
 You can also test if your TV supports the legacy protocol without pairing like this:
 
-- `npx homebridge-samsungtv-control legacy <ip> <mac>` e.g. `npx homebridge-samsungtv-control legacy 123.123.123.123 21:2F:B7:1F:DF:F0`
+- `npx homebridge-samsungtv-control legacy <ip> <mac>`  
+  e.g. `npx homebridge-samsungtv-control legacy 123.123.123.123 21:2F:B7:1F:DF:F0`
 
-When the script finished pairing it tries to send the mute key to your tv for you to be able to check if it worked. If you didn't observe mute being toggled on your TV you might try the other methods.
+When the script finished pairing it tries to send the mute key to your tv for you to be able to check if it worked. If you didn't observe mute being toggled on your TV you might try the other commands.
 
 ```json
 {
