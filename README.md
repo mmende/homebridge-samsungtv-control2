@@ -26,8 +26,11 @@ Younger TV's (2014+) might require being paired before the plugin is able to rem
 - `npx homebridge-samsungtv-control pair2 <ip> <mac>` e.g. `npx homebridge-samsungtv-control pair2 123.123.123.123 21:2F:B7:1F:DF:F0`
 
 For pair2 you can also try port 8001 like `npx homebridge-samsungtv-control pair2 123.123.123.123 21:2F:B7:1F:DF:F0 --port 8001`.
+You can also test if your TV supports the legacy protocol without pairing like this:
 
-When the script finished pairing it tries to send the mute key to your tv for you to be able to check if it worked. If you didn't observe mute being toggled on your TV you might try the second method.
+- `npx homebridge-samsungtv-control legacy <ip> <mac>` e.g. `npx homebridge-samsungtv-control legacy 123.123.123.123 21:2F:B7:1F:DF:F0`
+
+When the script finished pairing it tries to send the mute key to your tv for you to be able to check if it worked. If you didn't observe mute being toggled on your TV you might try the other methods.
 
 ```json
 {
@@ -35,7 +38,7 @@ When the script finished pairing it tries to send the mute key to your tv for yo
   "devices": [
     {
       "usn": "uuid:a7001fbe-c776-11ea-87d0-0242ac130003",
-      "token": "eyJzZXNzaW9uSWQiOjQyLCJhZXNLZXkiOiJZb3UgcmVhbGx5IGRlY29kZWQgdGhpcz8g8J+YiSJ9",
+      "token": "eyJzZXNzaW9uSWQiOjQyLCJhZXNLZXkiOiJZb3UgcmVhbGx5IGRlY29kZWQgdGhpcz8g8J+YiSJ9==",
       "name": "Bedroom TV"
     }
   ]
