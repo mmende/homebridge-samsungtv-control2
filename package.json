@@ -43,7 +43,7 @@
     "node-persist": "^3.1.0",
     "node-upnp": "^1.2.0",
     "node-upnp-remote": "^1.2.0",
-    "samsung-remote": "git+https://github.com/mmende/samsung-remote-models-2014-and-newer.git#v1.1.0",
+    "samsung-remote-pin-paired": "^1.1.0",
     "samsung-tv-control": "^1.10.0",
     "ssdp-ts": "^3.2.6"
   },

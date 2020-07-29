@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { Command } from 'commander'
 import chalk from 'chalk'
-import HJSamsungTv from 'samsung-remote'
+import HJSamsungTv from 'samsung-remote-pin-paired'
 import SamsungTv, { KEYS } from 'samsung-tv-control'
 import readline from 'readline'
 import parseSerialNumber from './utils/parseSerialNumber'

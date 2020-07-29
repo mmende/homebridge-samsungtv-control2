@@ -1,7 +1,7 @@
 import Remote from 'node-upnp-remote'
 import UPNP from 'node-upnp'
 import { Samsung, KEYS, APPS } from 'samsung-tv-control'
-import HJSamsungTv from 'samsung-remote'
+import HJSamsungTv from 'samsung-remote-pin-paired'
 import { PLATFORM_NAME, PLUGIN_NAME } from '../settings'
 import parseSerialNumber from './parseSerialNumber'
 import { Logger } from 'homebridge'
