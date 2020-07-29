@@ -11,6 +11,7 @@ import {
 import { PLUGIN_NAME, PLATFORM_NAME } from './settings'
 import detectDevices from './utils/detectDevices'
 import * as remote from './utils/remote'
+import hasCapability from './utils/hasCapability'
 import { DeviceConfig, SamsungPlatformConfig } from './types/deviceConfig'
 import { KEYS, APPS } from 'samsung-tv-control'
 import flatten from 'lodash.flatten'
@@ -48,7 +49,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
 
     // Add devices
     api.on(APIEvent.DID_FINISH_LAUNCHING, async () => {
-      const dir = path.join(api.user.storagePath(), PLUGIN_NAME)
+      const dir = path.join(api.user.storagePath(), `.${PLUGIN_NAME}`)
       this.log.debug(`Using node-persist path:`, dir)
       await storage.init({
         dir,
@@ -423,35 +424,55 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
     /**
      * Create a speaker service to allow volume control
      */
+    // const speakerService = new this.Service.TelevisionSpeaker(
+    //   `${tvName} Volume`,
+    //   `tvSpeakerService`,
+    // )
     const speakerService = tvAccessory.addService(
       this.Service.TelevisionSpeaker,
     )
+
+    // test if this is required for volume to show up in home
+    // tvService
+    //   .getCharacteristic(this.Characteristic.CurrentMediaState)
+    //   .on(`get`, (callback) => {
+    //     this.log.debug(`${tvName} - get CurrentMediaState`)
+    //     callback(null, this.Characteristic.CurrentMediaState.PLAY)
+    //   })
+    // tvService
+    //   .getCharacteristic(this.Characteristic.TargetMediaState)
+    //   .on(`get`, (callback) => {
+    //     this.log.debug(`${tvName} - get TargetMediaState`)
+    //     callback(null, this.Characteristic.TargetMediaState.PLAY)
+    //   })
+    //   .on(`set`, (callback) => {
+    //     this.log.debug(`${tvName} - set TargetMediaState`)
+    //     callback(null)
+    //   })
 
     /**
      * We have these scenarios
      * 1. GetVolume + SetVolume:
      *    => VolumeControlType.Absolute
      *    => Add Volume Characteristic with get/set
-     * 2. GetVolume but (no SetVolume or disableUpnpSetters)
-     *    => VolumeControlType.RELATIVE_WITH_CURRENT
-     *    => Add Volume Characteristic with getter only
-     *    => Add VolumeSelector Characteristic
+     *    => Also add VolumeSelector
+     * (2.) GetVolume but (no SetVolume)
+     *    ...same as 1. because SetVolume can be simulated
+     *       by inc./decr. volume step by step
+     *    => ~~VolumeControlType.RELATIVE_WITH_CURRENT~~
+     *    => ~~Add Volume Characteristic with getter only~~
      * 3. No GetVolume upnp capabilities:
      *    => VolumeControlType.RELATIVE
      *    => Add VolumeSelector Characteristic
      */
 
     let volumeControlType = this.Characteristic.VolumeControlType.ABSOLUTE
-    if (
-      device.capabilities.indexOf(`GetVolume`) >= 0 &&
-      (device.capabilities.indexOf(`SetVolume`) < 0 ||
-        device.disableUpnpSetters)
-    ) {
-      // No infos about the current volume can be fetched
-      volumeControlType = this.Characteristic.VolumeControlType
-        .RELATIVE_WITH_CURRENT
-    } else if (device.capabilities.indexOf(`GetVolume`) < 0) {
+    const canGetVolume = hasCapability(device, `GetVolume`)
+    if (!canGetVolume) {
       volumeControlType = this.Characteristic.VolumeControlType.RELATIVE
+      this.log.debug(`${tvName} - VolumeControlType RELATIVE`)
+    } else {
+      this.log.debug(`${tvName} - VolumeControlType ABSOLUTE`)
     }
 
     speakerService
@@ -464,11 +485,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         volumeControlType,
       )
 
-    if (
-      volumeControlType === this.Characteristic.VolumeControlType.ABSOLUTE ||
-      volumeControlType ===
-        this.Characteristic.VolumeControlType.RELATIVE_WITH_CURRENT
-    ) {
+    if (canGetVolume) {
       speakerService
         .getCharacteristic(this.Characteristic.Volume)
         .on(`get`, async (callback) => {
@@ -482,7 +499,9 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         })
     }
 
-    if (volumeControlType === this.Characteristic.VolumeControlType.ABSOLUTE) {
+    // When we can get the volume, we can always set the volume
+    // directly or simulate it by  multiple volup/downs
+    if (canGetVolume) {
       speakerService
         .getCharacteristic(this.Characteristic.Volume)
         .on(`set`, async (newValue, callback) => {
@@ -499,36 +518,31 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         })
     }
 
-    if (
-      volumeControlType === this.Characteristic.VolumeControlType.RELATIVE ||
-      volumeControlType ===
-        this.Characteristic.VolumeControlType.RELATIVE_WITH_CURRENT
-    ) {
-      speakerService
-        .getCharacteristic(this.Characteristic.VolumeSelector)
-        .on(`set`, async (newValue, callback) => {
-          this.log.debug(
-            `${tvName} - SET VolumeSelector => setNewValue: ${newValue}`,
-          )
-          try {
-            if (newValue === this.Characteristic.VolumeSelector.INCREMENT) {
-              await remote.volumeUp(this.getDevice(usn))
-            } else {
-              await remote.volumeDown(this.getDevice(usn))
-            }
-            const volume = await remote.getVolume(this.getDevice(usn))
-            speakerService
-              .getCharacteristic(this.Characteristic.Mute)
-              .updateValue(false)
-            speakerService
-              .getCharacteristic(this.Characteristic.Volume)
-              .updateValue(volume)
-            callback(null)
-          } catch (err) {
-            callback(err)
+    // VolumeSelector can be used in all scenarios
+    speakerService
+      .getCharacteristic(this.Characteristic.VolumeSelector)
+      .on(`set`, async (newValue, callback) => {
+        this.log.debug(
+          `${tvName} - SET VolumeSelector => setNewValue: ${newValue}`,
+        )
+        try {
+          if (newValue === this.Characteristic.VolumeSelector.INCREMENT) {
+            await remote.volumeUp(this.getDevice(usn))
+          } else {
+            await remote.volumeDown(this.getDevice(usn))
           }
-        })
-    }
+          const volume = await remote.getVolume(this.getDevice(usn))
+          speakerService
+            .getCharacteristic(this.Characteristic.Mute)
+            .updateValue(false)
+          speakerService
+            .getCharacteristic(this.Characteristic.Volume)
+            .updateValue(volume)
+          callback(null)
+        } catch (err) {
+          callback(err)
+        }
+      })
 
     speakerService
       .getCharacteristic(this.Characteristic.Mute)

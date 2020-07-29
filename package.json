@@ -27,7 +27,7 @@
     "watch": "npm run build && npm link && nodemon",
     "build": "rimraf ./dist && tsc",
     "prepublishOnly": "npm run lint && npm run build",
-    "model": "ts-node src/cli.ts"
+    "test": "jest"
   },
   "keywords": [
     "homebridge-plugin",
@@ -48,6 +48,7 @@
     "ssdp-ts": "^3.2.6"
   },
   "devDependencies": {
+    "@types/jest": "^26.0.7",
     "@types/node": "^14.0.23",
     "@types/node-persist": "^3.1.0",
     "@typescript-eslint/eslint-plugin": "^3.6.1",
@@ -55,9 +56,11 @@
     "eslint": "^7.4.0",
     "eslint-config-prettier": "^6.11.0",
     "homebridge": "^1.1.1",
+    "jest": "^26.1.0",
     "nodemon": "^2.0.4",
     "prettier": "^2.0.5",
     "rimraf": "^3.0.2",
+    "ts-jest": "^26.1.4",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.6"
   },
