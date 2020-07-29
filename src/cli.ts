@@ -33,6 +33,26 @@ const discover = async () => {
   }
 }
 
+const logPinAlternatives = ({
+  ip,
+  mac,
+  startMessage = chalk.red(
+    `That didn't work unfortunatelly. Here are some other possible solutions:`,
+  ),
+}: {
+  ip: string
+  mac: string
+  startMessage?: string
+}) => {
+  console.log(startMessage)
+  console.log(
+    chalk`\t1. Try pairing method 2 {green npx ${PLUGIN_NAME} pair2 ${ip} ${mac}}`,
+  )
+  console.log(
+    chalk`\t2. Try the legacy protocol {green npx ${PLUGIN_NAME} legacy ${ip} ${mac}}`,
+  )
+}
+
 const pinPair = async (ip: string, mac: string) => {
   const deviceConfig = {
     ip,
@@ -44,10 +64,8 @@ const pinPair = async (ip: string, mac: string) => {
     await tv.init()
     await tv.requestPin()
   } catch (err) {
-    console.log(
-      `That didn't work unfortunatelly. Please try the second method:` +
-        chalk`{green npx ${PLUGIN_NAME} pair1 ${ip} ${mac}}`,
-    )
+    logPinAlternatives({ ip, mac })
+    process.exit(1)
   }
 
   const rl = readline.createInterface({
@@ -64,17 +82,7 @@ const pinPair = async (ip: string, mac: string) => {
       identity = await tv.confirmPin(pin)
       await tv.connect()
     } catch (err) {
-      console.log(
-        chalk.red(
-          `That didn't work unfortunatelly. Here are some other possible solutions:`,
-        ),
-      )
-      console.log(
-        chalk`\t1. Try again... {green npx ${PLUGIN_NAME} pair1 ${ip} ${mac}}`,
-      )
-      console.log(
-        chalk`\t2. Try the other pairing method {green npx ${PLUGIN_NAME} pair2 ${ip} ${mac}}`,
-      )
+      logPinAlternatives({ ip, mac })
       rl.close()
       process.exit(1)
     }
@@ -88,6 +96,13 @@ const pinPair = async (ip: string, mac: string) => {
         identity,
       )}}`,
     )
+    logPinAlternatives({
+      ip,
+      mac,
+      startMessage: chalk.yellow(
+        `If it didn't work, here are some other possible solutions:`,
+      ),
+    })
     process.exit(0)
   })
 }
@@ -119,12 +134,16 @@ const logTokenAlternatives = ({
   console.log(
     chalk`\t${solution}. Try the other pairing method {green npx ${PLUGIN_NAME} pair1 ${ip} ${mac}}`,
   )
+  solution++
+  console.log(
+    chalk`\t${solution}. Try the legacy protocol {green npx ${PLUGIN_NAME} legacy ${ip} ${mac}}`,
+  )
 }
 
 const tokenPair = async (
   ip: string,
   mac: string,
-  { port, legacy }: { port: string; legacy: boolean },
+  { port }: { port: string },
 ) => {
   const config = {
     ip,
@@ -133,32 +152,10 @@ const tokenPair = async (
     port: parseInt(port, 10),
   }
   const tv = new SamsungTv(config)
-  if (port === `55000` || legacy) {
-    if (port === `55000` && !legacy) {
-      console.log(`55000 is the legacy port that doesn't require pairing.\n`)
-    }
+  if (port === `55000`) {
     console.log(
-      `Sending the mute key to see if your device is controlable with the legacy protocol.`,
+      chalk.yellow`Port 55000 is usually the port for the legacy protocol without pairing and most likely won't work with pair2. Trying anyway.`,
     )
-    try {
-      await tv.sendKeyPromise(KEYS.KEY_MUTE)
-    } catch (err) {
-      logTokenAlternatives({ ip, mac, port })
-      process.exit(1)
-    }
-    console.log(
-      `Did the tv switch it's mute state? If yes then your tv supports the legacy protocol. ` +
-        chalk`Usually the plugin detects the appropriate port but you can also force the legacy port being used by setting {yellow remoteControlPort} to {yellow 55000}\n`,
-    )
-    logTokenAlternatives({
-      ip,
-      mac,
-      port,
-      startMessage: chalk.yellow(
-        `If it didn't work, here are some other possible solutions:`,
-      ),
-    })
-    process.exit(0)
   }
   console.log(
     `Ok... sending the pairing request to your tv. Please click allow when asked`,
@@ -204,6 +201,62 @@ const tokenPair = async (
   process.exit(0)
 }
 
+const logLegacyAlternatives = ({
+  ip,
+  mac,
+  startMessage = chalk.red(
+    `That didn't work unfortunatelly. Here are some other possible solutions:`,
+  ),
+}: {
+  ip: string
+  mac: string
+  startMessage?: string
+}) => {
+  console.log(startMessage)
+  console.log(
+    chalk`\t1. Try pairing method 1 {green npx ${PLUGIN_NAME} pair1 ${ip} ${mac}}`,
+  )
+  console.log(
+    chalk`\t2. Try pairing method 2 {green npx ${PLUGIN_NAME} pair2 ${ip} ${mac}}`,
+  )
+}
+
+const legacy = async (ip: string, mac: string, { port }: { port: string }) => {
+  const config = {
+    ip,
+    mac,
+    name: PLATFORM_NAME,
+    port: parseInt(port, 10),
+  }
+  const tv = new SamsungTv(config)
+  if (port === `8001` || port === `8002`) {
+    console.log(
+      chalk.yellow`Port ${port} will most likely not work with the legacy protocol. You should try pair1 or pair2 instead. Trying anyway.`,
+    )
+  }
+  console.log(
+    `Sending the mute key to see if your device is controlable with the legacy protocol over port ${port}.`,
+  )
+  try {
+    await tv.sendKeyPromise(KEYS.KEY_MUTE)
+  } catch (err) {
+    logLegacyAlternatives({ ip, mac })
+    process.exit(1)
+  }
+  console.log(
+    `Did the tv switch it's mute state? If yes then your tv supports the legacy protocol. ` +
+      chalk`Usually the plugin detects the appropriate port but you can also force this port by setting {yellow remoteControlPort} to {yellow ${port}}\n`,
+  )
+  logLegacyAlternatives({
+    ip,
+    mac,
+    startMessage: chalk.yellow(
+      `If it didn't work, here are some other possible solutions:`,
+    ),
+  })
+  process.exit(0)
+}
+
 const program = new Command()
 
 program
@@ -232,10 +285,12 @@ program
     `Remote control port for method 1. You might try 8001 as well here.`,
     `8002`,
   )
-  .option(
-    `-l, --legacy`,
-    `If set, the script won't try to pair and just sends the mute key.`,
-  )
   .action(tokenPair)
+
+program
+  .command(`legacy <ip> <mac>`)
+  .description(`Tests if the legacy protocol can be used`)
+  .option(`-p, --port <port>`, `Remote control port.`, `55000`)
+  .action(legacy)
 
 program.parse(process.argv)
