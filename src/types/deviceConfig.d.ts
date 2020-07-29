@@ -1,5 +1,14 @@
 import { PLATFORM_NAME } from '../settings'
 
+export type UPNPCapability =
+  | `GetMute`
+  | `SetMute`
+  | `GetVolume`
+  | `SetVolume`
+  | `GetBrightness`
+  | `SetBrightness`
+  | string
+
 export interface DeviceConfig {
   name: string
   modelName: string
@@ -17,6 +26,7 @@ export interface DeviceConfig {
   }>
   disableUpnpSetters?: boolean
   discovered?: boolean
+  capabilities: Array<UPNPCapability>
 }
 
 export interface SamsungPlatformConfig {

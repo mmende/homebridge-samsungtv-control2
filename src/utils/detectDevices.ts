@@ -5,7 +5,7 @@ import getMacAddress from './getMacAddress'
 import filterUSN from './filterUSN'
 import { Logger } from 'homebridge'
 import chalk from 'chalk'
-import { SamsungPlatformConfig } from '../types/deviceConfig'
+import { SamsungPlatformConfig, UPNPCapability } from '../types/deviceConfig'
 
 interface Headers {
   USN: string
@@ -24,15 +24,6 @@ interface CheckedUpnpDevice {
   modelName?: string
   services?: { [service: string]: Record<string, unknown> }
 }
-
-type UPNPCapability =
-  | `GetMute`
-  | `SetMute`
-  | `GetVolume`
-  | `SetVolume`
-  | `GetBrightness`
-  | `SetBrightness`
-  | string
 
 export interface SamsungTV {
   friendlyName: string

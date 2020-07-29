@@ -118,6 +118,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         location: lastKnownLocation,
         address: lastKnownIp,
         mac,
+        capabilities,
       } = tv
       const device: DeviceConfig = {
         name,
@@ -127,6 +128,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         mac,
         usn,
         delay: 500,
+        capabilities,
       }
       // Check if the tv was in the devices list before
       // if so, only replace the relevant parts
@@ -425,6 +427,33 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       this.Service.TelevisionSpeaker,
     )
 
+    /**
+     * We have these scenarios
+     * 1. GetVolume + SetVolume:
+     *    => VolumeControlType.Absolute
+     *    => Add Volume Characteristic with get/set
+     * 2. GetVolume but (no SetVolume or disableUpnpSetters)
+     *    => VolumeControlType.RELATIVE_WITH_CURRENT
+     *    => Add Volume Characteristic with getter only
+     *    => Add VolumeSelector Characteristic
+     * 3. No GetVolume upnp capabilities:
+     *    => VolumeControlType.RELATIVE
+     *    => Add VolumeSelector Characteristic
+     */
+
+    let volumeControlType = this.Characteristic.VolumeControlType.ABSOLUTE
+    if (
+      device.capabilities.indexOf(`GetVolume`) >= 0 &&
+      (device.capabilities.indexOf(`SetVolume`) < 0 ||
+        device.disableUpnpSetters)
+    ) {
+      // No infos about the current volume can be fetched
+      volumeControlType = this.Characteristic.VolumeControlType
+        .RELATIVE_WITH_CURRENT
+    } else if (device.capabilities.indexOf(`GetVolume`) < 0) {
+      volumeControlType = this.Characteristic.VolumeControlType.RELATIVE
+    }
+
     speakerService
       .setCharacteristic(
         this.Characteristic.Active,
@@ -432,58 +461,74 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       )
       .setCharacteristic(
         this.Characteristic.VolumeControlType,
-        this.Characteristic.VolumeControlType.ABSOLUTE,
+        volumeControlType,
       )
 
-    // handle volume control
-    speakerService
-      .getCharacteristic(this.Characteristic.Volume)
-      .on(`get`, async (callback) => {
-        this.log.debug(`${tvName} - GET Volume`)
-        try {
-          const volume = await remote.getVolume(this.getDevice(usn))
-          callback(null, volume)
-        } catch (err) {
-          callback(err)
-        }
-      })
-      .on(`set`, async (newValue, callback) => {
-        this.log.debug(`${tvName} - SET Volume => setNewValue: ${newValue}`)
-        try {
-          await remote.setVolume(this.getDevice(usn), newValue)
-          speakerService
-            .getCharacteristic(this.Characteristic.Mute)
-            .updateValue(false)
-          callback(null)
-        } catch (err) {
-          callback(err)
-        }
-      })
-
-    speakerService
-      .getCharacteristic(this.Characteristic.VolumeSelector)
-      .on(`set`, async (newValue, callback) => {
-        this.log.debug(
-          `${tvName} - SET VolumeSelector => setNewValue: ${newValue}`,
-        )
-        try {
-          if (newValue === this.Characteristic.VolumeSelector.INCREMENT) {
-            await remote.volumeUp(this.getDevice(usn))
-          } else {
-            await remote.volumeDown(this.getDevice(usn))
+    if (
+      volumeControlType === this.Characteristic.VolumeControlType.ABSOLUTE ||
+      volumeControlType ===
+        this.Characteristic.VolumeControlType.RELATIVE_WITH_CURRENT
+    ) {
+      speakerService
+        .getCharacteristic(this.Characteristic.Volume)
+        .on(`get`, async (callback) => {
+          this.log.debug(`${tvName} - GET Volume`)
+          try {
+            const volume = await remote.getVolume(this.getDevice(usn))
+            callback(null, volume)
+          } catch (err) {
+            callback(err)
           }
-          const volume = await remote.getVolume(this.getDevice(usn))
-          speakerService
-            .getCharacteristic(this.Characteristic.Mute)
-            .updateValue(false)
-          speakerService
-            .getCharacteristic(this.Characteristic.Volume)
-            .updateValue(volume)
-          callback(null)
-        } catch (err) {
-          callback(err)
-        }
-      })
+        })
+    }
+
+    if (volumeControlType === this.Characteristic.VolumeControlType.ABSOLUTE) {
+      speakerService
+        .getCharacteristic(this.Characteristic.Volume)
+        .on(`set`, async (newValue, callback) => {
+          this.log.debug(`${tvName} - SET Volume => setNewValue: ${newValue}`)
+          try {
+            await remote.setVolume(this.getDevice(usn), newValue)
+            speakerService
+              .getCharacteristic(this.Characteristic.Mute)
+              .updateValue(false)
+            callback(null)
+          } catch (err) {
+            callback(err)
+          }
+        })
+    }
+
+    if (
+      volumeControlType === this.Characteristic.VolumeControlType.RELATIVE ||
+      volumeControlType ===
+        this.Characteristic.VolumeControlType.RELATIVE_WITH_CURRENT
+    ) {
+      speakerService
+        .getCharacteristic(this.Characteristic.VolumeSelector)
+        .on(`set`, async (newValue, callback) => {
+          this.log.debug(
+            `${tvName} - SET VolumeSelector => setNewValue: ${newValue}`,
+          )
+          try {
+            if (newValue === this.Characteristic.VolumeSelector.INCREMENT) {
+              await remote.volumeUp(this.getDevice(usn))
+            } else {
+              await remote.volumeDown(this.getDevice(usn))
+            }
+            const volume = await remote.getVolume(this.getDevice(usn))
+            speakerService
+              .getCharacteristic(this.Characteristic.Mute)
+              .updateValue(false)
+            speakerService
+              .getCharacteristic(this.Characteristic.Volume)
+              .updateValue(volume)
+            callback(null)
+          } catch (err) {
+            callback(err)
+          }
+        })
+    }
 
     speakerService
       .getCharacteristic(this.Characteristic.Mute)
