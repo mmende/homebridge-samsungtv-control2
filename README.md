@@ -1,6 +1,6 @@
 # Homebridge-SamsungTV-Control
 
-<a href="https://www.npmjs.com/package/homebridge-samsungtv-control"><img title="npm version" src="https://badgen.net/npm/v/homebridge-samsungtv-control?icon=npm" ></a>
+<a href="https://www.npmjs.com/package/homebridge-samsungtv-control"><img title="npm version" src="https://badgen.net/npm/v/homebridge-samsungtv-control" ></a>
 <a href="https://www.npmjs.com/package/homebridge-samsungtv-control"><img title="npm downloads" src="https://badgen.net/npm/dt/homebridge-samsungtv-control?icon=npm"></a>
 
 This plugin adds Samsung TV's available in your local network to homebridge.
