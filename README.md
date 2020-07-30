@@ -1,8 +1,16 @@
 # Homebridge-SamsungTV-Control
 
-This plugin adds Samsung TV's available in your local network to homebridge. Just install the plugin in the Homebridge UI in the Plugin tab, turn on all your Samsung TV's so they can be discovered and restart homebridge. Also if you update the plugin it is recommended to start your TV's before restarting homebridge since there might be some internal changes that need to be updated.
+<a href="https://www.npmjs.com/package/homebridge-samsungtv-control"><img title="npm version" src="https://badgen.net/npm/v/homebridge-samsungtv-control?icon=npm" ></a>
+<a href="https://www.npmjs.com/package/homebridge-samsungtv-control"><img title="npm downloads" src="https://badgen.net/npm/dt/homebridge-samsungtv-control?icon=npm"></a>
+
+This plugin adds Samsung TV's available in your local network to homebridge.
 
 <img src="assets/preview.png?raw=true" />
+
+# Installation
+
+Just install the plugin in the [config-ui-x](https://github.com/oznu/homebridge-config-ui-x) plugin tab, turn all your Samsung TV's on so they can be discovered and restart homebridge.  
+Or run `npm i -g homebridge-samsungtv-control@latest`.
 
 # Customize devices
 
