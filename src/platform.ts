@@ -12,9 +12,9 @@ import { PLUGIN_NAME, PLATFORM_NAME } from './settings'
 import detectDevices from './utils/detectDevices'
 import * as remote from './utils/remote'
 import hasCapability from './utils/hasCapability'
+import parseKeys from './utils/parseKeys'
 import { DeviceConfig, SamsungPlatformConfig } from './types/deviceConfig'
 import { KEYS, APPS } from 'samsung-tv-control'
-import flatten from 'lodash.flatten'
 import storage from 'node-persist'
 import chalk from 'chalk'
 import path from 'path'
@@ -26,12 +26,8 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly Characteristic: typeof Characteristic = this.api.hap
     .Characteristic
 
-  // this is used to track restored cached accessories
-  // public readonly accessories: PlatformAccessory[] = [];
   public readonly tvAccessories: Array<PlatformAccessory> = []
   private devices: Array<DeviceConfig> = []
-
-  // private store: storage
 
   constructor(
     public readonly log: Logger,
@@ -585,51 +581,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         continue
       }
       // Sending keys
-      let keys: Array<KEYS> = []
-      if (/^[0-9]+$/.test(cInput.keys)) {
-        for (let i = 0; i < cInput.keys.length; ++i) {
-          const num = cInput.keys[i]
-          keys.push(KEYS[`KEY_${num}`])
-        }
-        keys.push(KEYS.KEY_ENTER)
-      } else {
-        let keysArr = cInput.keys
-          .split(`,`)
-          .map(
-            (k) =>
-              k
-                .trim() // remove whitespace characters
-                .toUpperCase() // allow lowercase
-                .replace(/^(KEY_)?/, `KEY_`), // Add KEY_ if not present
-          )
-          .map(
-            // Allow repetitions like KEY_DOWN*3
-            (k) => {
-              const re = /^(.*)(\*([0-9]+))$/
-              const match = re.exec(k)
-              if (match) {
-                const rep = parseInt(match[3], 10)
-                const arr: Array<string> = []
-                for (let i = 0; i < rep; ++i) {
-                  arr.push(match[1])
-                }
-                return arr
-              }
-              return k
-            },
-          )
-        keysArr = flatten(keysArr)
-
-        keys = (keysArr as Array<string>).filter((k) => {
-          if (!KEYS[k]) {
-            this.log.warn(
-              `${tvName} - Ignoring invalid key "${k}" in customInput "${cInput}"`,
-            )
-            return false
-          }
-          return true
-        }) as Array<KEYS>
-      }
+      const keys = parseKeys(cInput, device, this.log)
       const type =
         keys.length === 1 && /^KEY_HDMI[0-4]?$/.test(keys[0])
           ? this.Characteristic.InputSourceType.HDMI

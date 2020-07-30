@@ -9,6 +9,10 @@ export type UPNPCapability =
   | `SetBrightness`
   | string
 
+export interface Input {
+  name: string
+  keys: string
+}
 export interface DeviceConfig {
   name: string
   modelName: string
@@ -20,10 +24,7 @@ export interface DeviceConfig {
   ignore?: boolean
   remoteControlPort?: number
   token?: string
-  inputs?: Array<{
-    name: string
-    keys: string
-  }>
+  inputs?: Array<Input>
   disableUpnpSetters?: boolean
   discovered?: boolean
   capabilities: Array<UPNPCapability>
