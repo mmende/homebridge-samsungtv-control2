@@ -9,7 +9,7 @@ This plugin adds Samsung TV's available in your local network to homebridge.
 
 # Installation
 
-Just install the plugin in the [config-ui-x](https://github.com/oznu/homebridge-config-ui-x) plugin tab or with `npm i -g homebridge-samsungtv-control@latest`, turn all your Samsung TV's on so they can be discovered and restart homebridge.
+Just install the plugin in the [config-ui-x](https://github.com/oznu/homebridge-config-ui-x) plugin tab or with `npm i -g homebridge-samsungtv-control@latest`, turn on all your Samsung TV's so they can be discovered and restart homebridge.
 
 # Customize devices
 
@@ -104,7 +104,7 @@ Here is an example:
 }
 ```
 
-- [List of apps](https://github.com/Toxblh/samsung-tv-control/blob/HEAD/src/apps.ts) - The support for opening apps is unclear. These however won't work when paired with `pair1` definitely.
 - [List of keys](https://github.com/Toxblh/samsung-tv-control/blob/master/src/keys.ts) - You just have to test which keys work on your tv and which don't since this differs strongly between all the models. Casing doesn't matter and you can also leave away `KEY_` for convenience as seen in the example. If you need to send a key multiple times in row you can add e.g. `*3` to send it three times.
+- [List of apps](https://github.com/Toxblh/samsung-tv-control/blob/HEAD/src/apps.ts) - The support for opening apps is unclear. These however won't work when paired with `pair1` definitely.
 
 **Note: Unfortunatelly when editing inputs it might be required to remove the tv from homekit and add it again after homebridge restarted for the home app to see the changes.**
