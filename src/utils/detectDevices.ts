@@ -42,11 +42,23 @@ const checkDeviceDetails = async (
   log?: Logger,
   config?: SamsungPlatformConfig,
 ) => {
+  // eslint-disable-next-line
+  const logFn = log ? log.debug : console.log
   const deviceCustomizations =
     config && Array.isArray(config.devices) ? config.devices : []
   const usn = filterUSN(headers.USN)
-  const upnp = new UPNP({ url: headers.LOCATION })
-  const deviceDescription = (await upnp.getDeviceDescription()) as CheckedUpnpDevice
+  let upnp: UPNP
+  let deviceDescription: CheckedUpnpDevice
+  try {
+    upnp = new UPNP({ url: headers.LOCATION })
+    deviceDescription = (await upnp.getDeviceDescription()) as CheckedUpnpDevice
+  } catch (err) {
+    logFn(
+      chalk`{red Got error while trying to check device with usn: "{yellow ${usn}}}".`,
+      err,
+    )
+    return null
+  }
   const { manufacturer, friendlyName, services = {} } = deviceDescription
   let { modelName } = deviceDescription
   if (
@@ -61,8 +73,6 @@ const checkDeviceDetails = async (
     if (configuredDevice && configuredDevice.modelName) {
       modelName = configuredDevice.modelName
     } else {
-      // eslint-disable-next-line
-      const logFn = log ? log.info : console.log
       logFn(
         chalk`Found a Samsung device ({blue ${friendlyName}}) that doesn't expose a correct model name. ` +
           chalk`If this is a Samsung TV add this device to your config with usn: "{green ${usn}}" and the correct model name (e.g. UN40C5000)`,
@@ -72,8 +82,6 @@ const checkDeviceDetails = async (
   }
   const model = parseSN(modelName)
   if (!model) {
-    // eslint-disable-next-line
-    const logFn = log ? log.debug : console.log
     logFn(
       chalk`Found unparsable model name ({red ${modelName}}) for device {blue ${friendlyName}}, usn: "{green ${usn}}". Skipping it.`,
     )
@@ -87,8 +95,6 @@ const checkDeviceDetails = async (
     if (configuredDevice && configuredDevice.mac) {
       mac = configuredDevice.mac
     } else {
-      // eslint-disable-next-line
-      const logFn = log ? log.debug : console.log
       logFn(
         chalk`Could not determine mac address for {blue ${friendlyName}} (${modelName}), usn: "{green ${usn}}". Skipping it. ` +
           chalk`Please add the mac address manually to your config if you want to use this TV.`,
@@ -97,21 +103,22 @@ const checkDeviceDetails = async (
     }
   }
 
-  /**
-   * @todo
-   * Check capibilities
-   * 1. Check if RenderingControl service exists
-   * 2. Check if exists: GetMute, SetMute, GetVolume, SetVolume, GetBrightness, SetBrightness
-   */
   let capabilities: Array<UPNPCapability> = []
   const rcServiceName = Object.keys(services).find(
     (s) => s.indexOf(`RenderingControl`) !== -1,
   )
   if (rcServiceName) {
-    const serviceDescription: {
-      [action: string]: Record<string, unknown>
-    } = await upnp.getServiceDescription(rcServiceName)
-    capabilities = Object.keys(serviceDescription.actions)
+    try {
+      const serviceDescription: {
+        [action: string]: Record<string, unknown>
+      } = await upnp.getServiceDescription(rcServiceName)
+      capabilities = Object.keys(serviceDescription.actions)
+    } catch (err) {
+      logFn(
+        chalk.yellow`Could not check capabilities for {blue ${friendlyName}} (${modelName}), usn: "{green ${usn}}".`,
+        err,
+      )
+    }
   }
 
   const tv: SamsungTV = {
