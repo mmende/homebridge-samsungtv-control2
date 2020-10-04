@@ -27,8 +27,14 @@ const discover = async () => {
     for (let i = 0; i < devices.length; ++i) {
       const device = devices[i]
       console.log(
-        chalk`{blue ${device.friendlyName}} (${device.modelName}): usn "{green ${device.usn}}"`,
+        chalk`{blue ${device.friendlyName}:}`,
       )
+      console.log(
+        chalk`\tmodel: {green ${device.modelName}}`,
+      )
+      console.log(chalk`\tusn: {green ${device.usn}}`)
+      console.log(chalk`\tip-address: {green ${device.address}}`)
+      console.log(chalk`\tmac-address: {green ${device.mac}}`)
     }
   }
 }
