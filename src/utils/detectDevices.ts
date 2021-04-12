@@ -82,9 +82,9 @@ const checkDeviceDetails = async (
   }
   const model = parseSN(modelName)
   if (!model) {
-    logFn(
-      chalk`Found unparsable model name ({red ${modelName}}) for device {blue ${friendlyName}}, usn: "{green ${usn}}". Skipping it.`,
-    )
+    //logFn(
+    //  chalk`Found unparsable model name ({red ${modelName}}) for device {blue ${friendlyName}}, usn: "{green ${usn}}". Skipping it.`,
+    //)
     return null
   }
   let mac = `00:00:00:00:00:00`
