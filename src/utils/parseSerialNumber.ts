@@ -1,17 +1,17 @@
 const techs = {
-  U: 'LED',
-  G: 'QLED (2018/2019)',
-  Q: 'QLED (2017)',
-  P: 'Plasma',
-  L: 'LCD',
-  K: 'OLED',
-} as const;
+  U: `LED`,
+  G: `QLED (2018/2019)`,
+  Q: `QLED (2017)`,
+  P: `Plasma`,
+  L: `LCD`,
+  K: `OLED`,
+} as const
 const markets = {
-  N: 'Northamerica',
-  E: 'Europe',
-  Q: 'Germany', // only for technology G
-  A: 'Asia',
-} as const;
+  N: `Northamerica`,
+  E: `Europe`,
+  Q: `Germany`, // only for technology G
+  A: `Asia`,
+} as const
 const years = {
   Q: [2017, 2018, 2019],
   RU: 2019,
@@ -36,15 +36,15 @@ const years = {
   C: 2010,
   B: 2009,
   A: 2008,
-} as const;
+} as const
 
 export interface SamsungTVModel {
-  technology: typeof techs[keyof typeof techs];
-  technologyKey: keyof typeof techs;
-  market: typeof markets[keyof typeof markets];
-  marketKey: keyof typeof markets;
-  year: typeof years[keyof typeof years];
-  yearKey: keyof typeof years;
+  technology: typeof techs[keyof typeof techs]
+  technologyKey: keyof typeof techs
+  market: typeof markets[keyof typeof markets]
+  marketKey: keyof typeof markets
+  year: typeof years[keyof typeof years]
+  yearKey: keyof typeof years
   size: number
   rest: string
 }
@@ -55,21 +55,23 @@ export interface SamsungTVModel {
  * @param sn SerialNumber
  */
 export default (sn: string): SamsungTVModel | null => {
-  const techKeys = Object.keys(techs);
-  const marketKeys = Object.keys(markets);
-  const yearKeys = Object.keys(years);
-  const pattern = `^(${techKeys.join('|')})(${marketKeys.join('|')})([0-9]+)(${yearKeys.join('|')})(.*)`;
-  const re = new RegExp(pattern, 'gi');
+  const techKeys = Object.keys(techs)
+  const marketKeys = Object.keys(markets)
+  const yearKeys = Object.keys(years)
+  const pattern = `^(${techKeys.join(`|`)})(${marketKeys.join(
+    `|`,
+  )})([0-9]+)(${yearKeys.join(`|`)})(.*)`
+  const re = new RegExp(pattern, `gi`)
 
-  const matches = re.exec(sn);
+  const matches = re.exec(sn)
   if (!matches) {
-    return null;
+    return null
   }
-  const tech = matches[1];
-  const market = matches[2];
-  const size = matches[3];
-  const year = matches[4];
-  const rest = matches[5];
+  const tech = matches[1]
+  const market = matches[2]
+  const size = matches[3]
+  const year = matches[4]
+  const rest = matches[5]
   return {
     technology: techs[tech],
     technologyKey: tech as keyof typeof techs,
@@ -79,6 +81,5 @@ export default (sn: string): SamsungTVModel | null => {
     year: years[year],
     yearKey: year as keyof typeof years,
     rest,
-  };
-};
-
+  }
+}
