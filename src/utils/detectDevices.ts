@@ -59,14 +59,14 @@ const checkDeviceDetails = async (
     )
     return null
   }
-  const { manufacturer, friendlyName, services = {} } = deviceDescription
+  const { /* manufacturer, */ friendlyName, services = {} } = deviceDescription
   let { modelName } = deviceDescription
-  if (
-    typeof manufacturer !== `string` ||
-    manufacturer.indexOf(`Samsung Electronics`) < 0
-  ) {
-    return null
-  }
+  // if (
+  //   typeof manufacturer !== `string` ||
+  //   manufacturer.indexOf(`Samsung Electronics`) < 0
+  // ) {
+  //   return null
+  // }
   if (typeof modelName !== `string` || !modelName.length) {
     // Check if the modelName was configured manually
     const configuredDevice = deviceCustomizations.find((d) => d.usn === usn)
@@ -74,7 +74,7 @@ const checkDeviceDetails = async (
       modelName = configuredDevice.modelName
     } else {
       logFn(
-        chalk`Found a Samsung device ({blue ${friendlyName}}) that doesn't expose a correct model name. ` +
+        chalk`Found a device ({blue ${friendlyName}}) that doesn't expose a correct Samsung model name. ` +
           chalk`If this is a Samsung TV add this device to your config with usn: "{green ${usn}}" and the correct model name (e.g. UN40C5000)`,
       )
       return null
@@ -162,7 +162,7 @@ export default async (
   client.search(`urn:schemas-upnp-org:service:RenderingControl:1`)
 
   // Scan for scanDuration ms
-  await new Promise((res) => {
+  await new Promise<void>((res) => {
     setTimeout(() => {
       res()
     }, 5000)
