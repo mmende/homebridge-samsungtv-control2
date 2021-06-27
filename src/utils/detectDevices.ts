@@ -3,7 +3,7 @@ import UPNP from 'node-upnp'
 import parseSN, { SamsungTVModel } from './parseSerialNumber'
 import getMacAddress from './getMacAddress'
 import filterUSN from './filterUSN'
-import { Logger } from 'homebridge'
+// import { Logger } from 'homebridge'
 import chalk from 'chalk'
 import { SamsungPlatformConfig, UPNPCapability } from '../types/deviceConfig'
 
@@ -39,11 +39,8 @@ export interface SamsungTV {
 const checkDeviceDetails = async (
   headers: Headers,
   rinfo: RemoteInfo,
-  log?: Logger,
   config?: SamsungPlatformConfig,
 ) => {
-  // eslint-disable-next-line
-  const logFn = log ? log.debug : console.log
   const deviceCustomizations =
     config && Array.isArray(config.devices) ? config.devices : []
   const usn = filterUSN(headers.USN)
@@ -53,7 +50,7 @@ const checkDeviceDetails = async (
     upnp = new UPNP({ url: headers.LOCATION })
     deviceDescription = (await upnp.getDeviceDescription()) as CheckedUpnpDevice
   } catch (err) {
-    logFn(
+    console.log(
       chalk`{red Got error while trying to check device with usn: "{yellow ${usn}}}".`,
       err,
     )
@@ -73,7 +70,7 @@ const checkDeviceDetails = async (
     if (configuredDevice && configuredDevice.modelName) {
       modelName = configuredDevice.modelName
     } else {
-      logFn(
+      console.log(
         chalk`Found a device ({blue ${friendlyName}}) that doesn't expose a correct Samsung model name. ` +
           chalk`If this is a Samsung TV add this device to your config with usn: "{green ${usn}}" and the correct model name (e.g. UN40C5000)`,
       )
@@ -82,7 +79,7 @@ const checkDeviceDetails = async (
   }
   const model = parseSN(modelName)
   if (!model) {
-    logFn(
+    console.log(
       chalk`Found unparsable model name ({red ${modelName}}) for device {blue ${friendlyName}}, usn: "{green ${usn}}". Skipping it.`,
     )
     return null
@@ -95,7 +92,7 @@ const checkDeviceDetails = async (
     if (configuredDevice && configuredDevice.mac) {
       mac = configuredDevice.mac
     } else {
-      logFn(
+      console.log(
         chalk`Could not determine mac address for {blue ${friendlyName}} (${modelName}), usn: "{green ${usn}}". Skipping it. ` +
           chalk`Please add the mac address manually to your config if you want to use this TV.`,
       )
@@ -114,7 +111,7 @@ const checkDeviceDetails = async (
       } = await upnp.getServiceDescription(rcServiceName)
       capabilities = Object.keys(serviceDescription.actions)
     } catch (err) {
-      logFn(
+      console.log(
         chalk.yellow`Could not check capabilities for {blue ${friendlyName}} (${modelName}), usn: "{green ${usn}}".`,
         err,
       )
@@ -135,7 +132,7 @@ const checkDeviceDetails = async (
 }
 
 export default async (
-  log?: Logger,
+  // log?: Logger,
   config?: SamsungPlatformConfig,
 ): Promise<Array<SamsungTV>> => {
   const checkedDevices: Array<string> = []
@@ -155,7 +152,7 @@ export default async (
         return
       }
       checkedDevices.push(filterUSN(headers.USN))
-      deviceChecks.push(checkDeviceDetails(headers, rinfo, log, config))
+      deviceChecks.push(checkDeviceDetails(headers, rinfo, config))
     },
   )
   client.search(`urn:schemas-upnp-org:device:MediaRenderer:1`)

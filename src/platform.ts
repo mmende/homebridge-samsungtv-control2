@@ -104,7 +104,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
 
     const devices: Array<DeviceConfig> = []
     const samsungTVs = await detectDevices(
-      this.log,
+      // this.log,
       this.config as SamsungPlatformConfig,
     )
     for (const tv of samsungTVs) {
