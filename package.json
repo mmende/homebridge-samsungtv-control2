@@ -36,7 +36,7 @@
     "upnp"
   ],
   "dependencies": {
-    "chalk": "^4.1.0",
+    "chalk": "^4.1.1",
     "commander": "^6.1.0",
     "lodash.flatten": "^4.4.0",
     "macfromip": "^1.1.1",
@@ -44,25 +44,25 @@
     "node-upnp": "^1.2.0",
     "node-upnp-remote": "^1.2.0",
     "samsung-remote-pin-paired": "^1.1.0",
-    "samsung-tv-control": "^1.10.0",
+    "samsung-tv-control": "^1.12.3",
     "ssdp-ts": "^3.2.6"
   },
   "devDependencies": {
-    "@types/jest": "^26.0.14",
+    "@types/jest": "^26.0.23",
     "@types/node": "^14.11.2",
-    "@types/node-persist": "^3.1.0",
-    "@typescript-eslint/eslint-plugin": "^4.3.0",
-    "@typescript-eslint/parser": "^4.3.0",
-    "eslint": "^7.10.0",
+    "@types/node-persist": "^3.1.1",
+    "@typescript-eslint/eslint-plugin": "^4.28.0",
+    "@typescript-eslint/parser": "^4.28.0",
+    "eslint": "^7.29.0",
     "eslint-config-prettier": "^6.12.0",
-    "homebridge": "^1.1.6",
+    "homebridge": "^1.3.4",
     "jest": "^26.4.2",
-    "nodemon": "^2.0.4",
-    "prettier": "^2.1.2",
+    "nodemon": "^2.0.7",
+    "prettier": "^2.3.2",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.4.1",
     "ts-node": "^9.0.0",
-    "typescript": "^4.0.3"
+    "typescript": "^4.3.4"
   },
   "bin": "./cli.js"
 }

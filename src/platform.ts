@@ -286,7 +286,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       .on(`set`, async (newValue, callback) => {
         this.log.debug(`${tvName} - SET Active => setNewValue: ${newValue}`)
         try {
-          await remote.setActive(this.getDevice(usn), newValue)
+          await remote.setActive(this.getDevice(usn), newValue as boolean)
           tvService.updateCharacteristic(
             this.Characteristic.Active,
             newValue
@@ -337,7 +337,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
             `${tvName} - SET Brightness => setNewValue: ${newValue}`,
           )
           try {
-            await remote.setBrightness(this.getDevice(usn), newValue)
+            await remote.setBrightness(this.getDevice(usn), newValue as number)
             tvService.updateCharacteristic(
               this.Characteristic.Brightness,
               newValue,
@@ -491,7 +491,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         .on(`set`, async (newValue, callback) => {
           this.log.debug(`${tvName} - SET Volume => setNewValue: ${newValue}`)
           try {
-            await remote.setVolume(this.getDevice(usn), newValue)
+            await remote.setVolume(this.getDevice(usn), newValue as number)
             speakerService
               .getCharacteristic(this.Characteristic.Mute)
               .updateValue(false)
@@ -549,7 +549,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       .on(`set`, async (value, callback) => {
         this.log.debug(`${tvName} - SET Mute: ${value}`)
         try {
-          await remote.setMute(this.getDevice(usn), value)
+          await remote.setMute(this.getDevice(usn), value as boolean)
           callback(null)
         } catch (err) {
           callback(err)
@@ -607,7 +607,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
 
         // the value will be the value you set for the Identifier Characteristic
         // on the Input Source service that was selected - see input sources below.
-        const inputSource = sources[newValue]
+        const inputSource = sources[newValue as any]
         this.log.debug(
           `${tvName} - SET Active Identifier => setNewValue: ${newValue} (${inputSource.label})`,
         )
