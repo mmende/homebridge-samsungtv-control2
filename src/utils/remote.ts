@@ -20,6 +20,7 @@ const getRemoteConfig = (config: DeviceConfig) => {
     mac: config.mac,
     ip: config.lastKnownIp,
     name: PLATFORM_NAME,
+    token: config.token,
     port,
   }
 }
