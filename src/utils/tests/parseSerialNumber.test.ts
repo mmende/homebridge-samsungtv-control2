@@ -27,6 +27,6 @@ test(`parseSerialNumber`, () => {
   expect(model4!.size).toEqual(55)
   expect(model4!.year).toEqual(2020)
 
-  const model4 = parseSerialNumber(`laskdnalskndla`)
-  expect(model4).toBeFalsy()
+  const model5 = parseSerialNumber(`laskdnalskndla`)
+  expect(model5).toBeFalsy()
 })
