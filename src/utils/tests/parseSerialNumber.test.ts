@@ -20,6 +20,13 @@ test(`parseSerialNumber`, () => {
   expect(model3!.size).toEqual(42)
   expect(model3!.year).toEqual(2015)
 
-  const model4 = parseSerialNumber(`laskdnalskndla`)
-  expect(model4).toBeFalsy()
+  const model4 = parseSerialNumber(`UN55TU7000FXZA`)
+  expect(model4).not.toBeFalsy()
+  expect(model4!.market).toEqual(`Northamerica`)
+  expect(model4!.technology).toEqual(`LED`)
+  expect(model4!.size).toEqual(55)
+  expect(model4!.year).toEqual(2020)
+
+  const model5 = parseSerialNumber(`laskdnalskndla`)
+  expect(model5).toBeFalsy()
 })
