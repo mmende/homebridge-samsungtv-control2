@@ -11,6 +11,8 @@ This plugin adds Samsung TV's available in your local network to homebridge.
 
 Just install the plugin in the [config-ui-x](https://github.com/oznu/homebridge-config-ui-x) plugin tab or with `npm i -g homebridge-samsungtv-control@latest`, turn on all your Samsung TV's so they can be discovered and restart homebridge.
 
+The plugin parses the model number of the Samsung TV extract specific info about the model. The plugin currently parses model numbers from 2018 through 2020.
+
 # Customize devices
 
 After you started homebridge you should see the device names with their usn in the homebridge log. To customize a device, add an object with the usn (including `uuid:`) and any option you want to modify to the devices list under the `SamsungTVControl` platform. You could e.g. change the initial name like so:
