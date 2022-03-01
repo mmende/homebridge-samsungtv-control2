@@ -23,8 +23,8 @@ const DEVICES_KEY = `${PLATFORM_NAME}_devices`
 
 export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service
-  public readonly Characteristic: typeof Characteristic = this.api.hap
-    .Characteristic
+  public readonly Characteristic: typeof Characteristic =
+    this.api.hap.Characteristic
 
   public readonly tvAccessories: Array<PlatformAccessory> = []
   private devices: Array<DeviceConfig> = []
@@ -276,10 +276,13 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
       .getCharacteristic(this.Characteristic.Active)
       .on(`get`, async (callback) => {
         this.log.debug(`${tvName} - GET Active`)
+        // callback(null, false)
         try {
           const isActive = await remote.getActive(this.getDevice(usn))
+          // tvService.updateCharacteristic(this.Characteristic.Active, isActive)
           callback(null, isActive)
         } catch (err) {
+          this.log.warn(`${tvName} - Could not check active state`)
           callback(err)
         }
       })
@@ -295,6 +298,7 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
           )
           callback(null)
         } catch (err) {
+          this.log.warn(`${tvName} - Could not update active state`)
           callback(err)
         }
       })
@@ -474,11 +478,13 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
         .getCharacteristic(this.Characteristic.Volume)
         .on(`get`, async (callback) => {
           this.log.debug(`${tvName} - GET Volume`)
+          callback(null, 0)
           try {
             const volume = await remote.getVolume(this.getDevice(usn))
-            callback(null, volume)
+            tvService.updateCharacteristic(this.Characteristic.Volume, volume)
+            // callback(null, volume)
           } catch (err) {
-            callback(err)
+            // callback(err)
           }
         })
     }
@@ -539,17 +545,23 @@ export class SamsungTVHomebridgePlatform implements DynamicPlatformPlugin {
           callback(null, false)
           return
         }
+        callback(null, false)
         try {
           const muted = await remote.getMute(this.getDevice(usn))
-          callback(null, muted)
+          tvService.updateCharacteristic(this.Characteristic.Mute, muted)
+          // callback(null, muted)
         } catch (err) {
-          callback(err)
+          // callback(err)
         }
       })
       .on(`set`, async (value, callback) => {
         this.log.debug(`${tvName} - SET Mute: ${value}`)
         try {
           await remote.setMute(this.getDevice(usn), value as boolean)
+          tvService.updateCharacteristic(
+            this.Characteristic.Mute,
+            value as boolean,
+          )
           callback(null)
         } catch (err) {
           callback(err)
