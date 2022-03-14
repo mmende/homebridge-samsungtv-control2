@@ -64,7 +64,7 @@ const checkDeviceDetails = async (
   // ) {
   //   return null
   // }
-  if (typeof modelName !== `string` || !modelName.length) {
+  if (typeof modelName !== `string` || !modelName.length || modelName === "Samsung DTV DMR") {
     // Check if the modelName was configured manually
     const configuredDevice = deviceCustomizations.find((d) => d.usn === usn)
     if (configuredDevice && configuredDevice.modelName) {
